@@ -15,10 +15,10 @@ function createSaveAsElement(tagName, urlList, artName, errorCallback) {
 	if (urlList.length > 1) {
 		btn.innerText = "Download all";
 	}
-	// The button stays hidden until all the AJAX requests to get file extensions are resolved
-	btn.style.display = "none";
+	// The button stays blurry until all the AJAX requests to get file extensions are resolved
+	btn.style.opacity = "0.3";
 	assignClick(btn, urlList, artName).then(() => {
-		btn.style.display = "";
+		btn.style.opacity = "";
 	});
 	return btn;
 }
