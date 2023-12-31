@@ -143,10 +143,10 @@ function createSaveAsElement(tagName, urlList, artName, errorCallback) {
 	if (urlList.length > 1) {
 		btn.innerText = "Download all";
 	}
-	// The button stays hidden until all the AJAX requests to get file extensions are resolved
-	btn.style.display = "none";
+	// The button stays blurry until all the AJAX requests to get file extensions are resolved
+	btn.style.opacity = "0.3";
 	assignClick(btn, urlList, artName).then(() => {
-		btn.style.display = "";
+		btn.style.opacity = "";
 	});
 	return btn;
 }
@@ -158,7 +158,7 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 	}
 	// Retrieves the targets extensions
 	const extList = [];
-	for(const i = 0; i < urlList.length; ++i) {
+	for(let i = 0; i < urlList.length; ++i) {
 		const url = urlList[i];
 		const ext = await detectExtension(url, errorCallback);
 		extList[i] = ext;
@@ -181,7 +181,7 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 		} else {
 			// Batch downloading of multiple pictures
 			const requestList = [];
-			for(const i = 0; i < urlList.length; ++i) {
+			for(let i = 0; i < urlList.length; ++i) {
 				const url = urlList[i];
 				const ext = extList[i];
 				const request = GM_download({
@@ -210,7 +210,6 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 	function handleTimeout() {
 		alert("The download target has timed out :(");
 		unsetBusy();
-		errorCallback();
 	}
 
 	function handleError(error, ext) {
@@ -242,7 +241,6 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 				break;
 		}
 		unsetBusy();
-		errorCallback();
 	}
 }
 
@@ -295,7 +293,7 @@ async function detectExtension(url, errorCallback) {
 	} else {
 		console.error("Cannot determine extension of target: no GM_xmlhttpRequest permission.");
 	}
-	errorCallback();
+	admitFailure(btn, errorCallback);
 	return null;
 }
 
@@ -397,7 +395,6 @@ function processDeviantArt() {
 	}
 
 	async function create() {
-		const actBar = document.querySelector("div[data-hook=action_bar]");
 		const favBtn = document.querySelector("button[data-hook=fave_button]");
 		const comBtn = document.querySelector("button[data-hook=comment_button]");
 		// Comment button is preferred as model to generate the "Save as" button.
@@ -444,19 +441,28 @@ function processDeviantArt() {
 	}
 
 	function getArtName() {
-		return parseName(document.title.substr(0, document.title.length - 14));
+		// document.title is not correctly updated after a change of picture in the slideshow
+		const devMeta = document.querySelector("div[data-hook=deviation_meta]");
+		const artist = devMeta.querySelector("[data-hook=user_link]").dataset.username;
+		const title = devMeta.querySelector("[data-hook=deviation_title]").innerText;
+		return parseName(title + " by " + artist);
 	}
 
 	function createArtNameTextNode() {
 		// Adds the formatted name to the right of the meta section
-		const devMeta = document.querySelector("div[data-hook=deviation_meta]");
-		const nameTxt = document.createElement("div");
-		nameTxt.id = "artname-txt";
-		nameTxt.innerHTML = getArtName();
-		nameTxt.style.display = "inline-block";
-		nameTxt.style.minWidth = "max-content";
-		devMeta.appendChild(nameTxt);
-		selectText(nameTxt);
+		const previousNode = document.querySelector("div#artname-txt");
+		if (previousNode) {
+			previousNode.innerHTML = getArtName();
+		} else {
+			const devMeta = document.querySelector("div[data-hook=deviation_meta]");
+			const nameTxt = document.createElement("div");
+			nameTxt.id = "artname-txt";
+			nameTxt.innerHTML = getArtName();
+			nameTxt.style.display = "inline-block";
+			nameTxt.style.minWidth = "max-content";
+			devMeta.parentNode.insertBefore(nameTxt, devMeta);
+			selectText(nameTxt);
+		}
 	}
 }
 

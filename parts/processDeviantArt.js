@@ -43,7 +43,6 @@ function processDeviantArt() {
 	}
 
 	async function create() {
-		const actBar = document.querySelector("div[data-hook=action_bar]");
 		const favBtn = document.querySelector("button[data-hook=fave_button]");
 		const comBtn = document.querySelector("button[data-hook=comment_button]");
 		// Comment button is preferred as model to generate the "Save as" button.
@@ -90,18 +89,27 @@ function processDeviantArt() {
 	}
 
 	function getArtName() {
-		return parseName(document.title.substr(0, document.title.length - 14));
+		// document.title is not correctly updated after a change of picture in the slideshow
+		const devMeta = document.querySelector("div[data-hook=deviation_meta]");
+		const artist = devMeta.querySelector("[data-hook=user_link]").dataset.username;
+		const title = devMeta.querySelector("[data-hook=deviation_title]").innerText;
+		return parseName(title + " by " + artist);
 	}
 
 	function createArtNameTextNode() {
 		// Adds the formatted name to the right of the meta section
-		const devMeta = document.querySelector("div[data-hook=deviation_meta]");
-		const nameTxt = document.createElement("div");
-		nameTxt.id = "artname-txt";
-		nameTxt.innerHTML = getArtName();
-		nameTxt.style.display = "inline-block";
-		nameTxt.style.minWidth = "max-content";
-		devMeta.appendChild(nameTxt);
-		selectText(nameTxt);
+		const previousNode = document.querySelector("div#artname-txt");
+		if (previousNode) {
+			previousNode.innerHTML = getArtName();
+		} else {
+			const devMeta = document.querySelector("div[data-hook=deviation_meta]");
+			const nameTxt = document.createElement("div");
+			nameTxt.id = "artname-txt";
+			nameTxt.innerHTML = getArtName();
+			nameTxt.style.display = "inline-block";
+			nameTxt.style.minWidth = "max-content";
+			devMeta.parentNode.insertBefore(nameTxt, devMeta);
+			selectText(nameTxt);
+		}
 	}
 }
