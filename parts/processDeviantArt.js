@@ -42,7 +42,7 @@ function processDeviantArt() {
 		}
 	}
 
-	function create() {
+	async function create() {
 		const actBar = document.querySelector("div[data-hook=action_bar]");
 		const favBtn = document.querySelector("button[data-hook=fave_button]");
 		const comBtn = document.querySelector("button[data-hook=comment_button]");
@@ -57,10 +57,10 @@ function processDeviantArt() {
 		savBtn.querySelector("svg path").setAttribute("d", disketPathData);
 		savBtn.querySelector("span:last-child").innerText = "Save as";
 		refBtnCtn.parentNode.appendChild(savBtnCtn);
-		getExtensionThenAssignClick(savBtn, getArtSource(), getArtName(), createArtNameTextNode);
+		await assignClick(savBtn, getArtSource(), getArtName(), createArtNameTextNode);
 	}
 
-	function refresh() {
+	async function refresh() {
 		const nameTxt = document.getElementById("artname-txt");
 		const saveBtn = document.getElementById("artname-btn");
 		if(nameTxt) {
@@ -71,7 +71,7 @@ function processDeviantArt() {
 			const newSaveBtn = saveBtn.cloneNode(true);
 			removeFailure(newSaveBtn);
 			saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
-			getExtensionThenAssignClick(newSaveBtn, getArtSource(), getArtName(), createArtNameTextNode);
+			await assignClick(newSaveBtn, getArtSource(), getArtName(), createArtNameTextNode);
 		}
 	}
 

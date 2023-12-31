@@ -5,7 +5,7 @@ function createSaveAsElement(tagName, urlList, artName, errorCallback) {
 	}
 	btn.id = "artname-btn";
 	btn.innerText = "Save as";
-	if (!urlList || !GM_download || !GM_xmlhttpRequest || forceFailure) {
+	if (!urlList || !GM_download || forceFailure) {
 		admitFailure(btn, errorCallback);
 		return btn;
 	}

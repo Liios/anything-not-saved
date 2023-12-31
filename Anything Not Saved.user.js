@@ -133,7 +133,7 @@ function createSaveAsElement(tagName, urlList, artName, errorCallback) {
 	}
 	btn.id = "artname-btn";
 	btn.innerText = "Save as";
-	if (!urlList || !GM_download || !GM_xmlhttpRequest || forceFailure) {
+	if (!urlList || !GM_download || forceFailure) {
 		admitFailure(btn, errorCallback);
 		return btn;
 	}
@@ -240,46 +240,12 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 	}
 }
 
-/** Use a AJAX request in order to get the image extension when it's not in the URL.
-  * Usually needs a cross-scripting permission to access the CDN.
+/** Attempts to detect the extension of the download target from the URL.
+  * If that fails, uses a AJAX request and parses it in the response.
+  * In that case, we need a cross-scripting permission to access the CDN.
   * It also means the button will take more time to appear.
   * https://www.tampermonkey.net/documentation.php#GM_xmlhttpRequest
   */
-function getExtensionThenAssignClick(btn, url, name, errorCallback) {
-	if(forceFailure) {
-		admitFailure(btn, errorCallback);
-		return;
-	}
-	GM_xmlhttpRequest({
-		method: "head",
-		url: url,
-		onload: response => {
-			const filename = /filename=".*?\.(\w+)"/;
-			const mimeType = /content-type: image\/(\w+)/;
-			const headers = response.responseHeaders;
-			let ext = null;
-			if(filename.test(headers)) {
-				ext = filename.exec(headers)[1];
-			} else if(mimeType.test(headers)) {
-				// Legacy handling of DeviantArt before it went full Eclipse
-				ext = mimeType.exec(headers)[1];
-			}
-			if(ext) {
-				assignClick(btn, url, name, ext.replace("jpeg", "jpg"));
-			} else {
-				console.error("Could not determine extension of target.", response);
-				if(response.status === 403) {
-					btn.addEventListener("click", () => alert("Could not determine extension of target: AJAX request denied by server."));
-				} else {
-					btn.addEventListener("click", () => alert("Could not determine extension of target, see console for details."));
-				}
-				admitFailure(btn, errorCallback);
-			}
-		}
-	});
-}
-
-/** Detects the extension of the file to download. */
 async function detectExtension(url, errorCallback) {
 	// Tries to fetch the file extension from the supplied URL
 	// This is the simplest method but it does not alway work
@@ -295,29 +261,33 @@ async function detectExtension(url, errorCallback) {
 		}
 	}
 	// If it does not work, we send a head query and infer extension from the response
-	const response = await GM_xmlhttpRequest({
-		method: "head",
-		url: url
-	});
-	const headers = response.responseHeaders;
-	const filename = /filename=".*?\.(\w+)"/;
-	const mimeType = /content-type: image\/(\w+)/;
-	let ext = null;
-	if(filename.test(headers)) {
-		ext = filename.exec(headers)[1];
-	} else if(mimeType.test(headers)) {
-		// Legacy handling of DeviantArt before it went full Eclipse
-		ext = mimeType.exec(headers)[1];
-	}
-	if(ext) {
-		// Finished!
-		return ext.replace("jpeg", "jpg");
-	}
-	// If we are here then nothing worked
-	if(response.status === 403) {
-		console.error("Could not determine extension of target: AJAX request denied by server.", response);
+	if(GM_xmlhttpRequest) {
+		const response = await GM_xmlhttpRequest({
+			method: "head",
+			url: url
+		});
+		const headers = response.responseHeaders;
+		const filename = /filename=".*?\.(\w+)"/;
+		const mimeType = /content-type: image\/(\w+)/;
+		let ext = null;
+		if(filename.test(headers)) {
+			ext = filename.exec(headers)[1];
+		} else if(mimeType.test(headers)) {
+			// Legacy handling of DeviantArt before it went full Eclipse
+			ext = mimeType.exec(headers)[1];
+		}
+		if(ext) {
+			// Finished!
+			return ext.replace("jpeg", "jpg");
+		}
+		// If we are here then nothing worked
+		if(response.status === 403) {
+			console.error("Cannot determine extension of target: AJAX request denied by server.", response);
+		} else {
+			console.error("Cannot determine extension of target."));
+		}
 	} else {
-		console.error("Could not determine extension of target."));
+		console.error("Cannot determine extension of target: no GM_xmlhttpRequest permission.");
 	}
 	errorCallback();
 	return null;
@@ -420,7 +390,7 @@ function processDeviantArt() {
 		}
 	}
 
-	function create() {
+	async function create() {
 		const actBar = document.querySelector("div[data-hook=action_bar]");
 		const favBtn = document.querySelector("button[data-hook=fave_button]");
 		const comBtn = document.querySelector("button[data-hook=comment_button]");
@@ -435,10 +405,10 @@ function processDeviantArt() {
 		savBtn.querySelector("svg path").setAttribute("d", disketPathData);
 		savBtn.querySelector("span:last-child").innerText = "Save as";
 		refBtnCtn.parentNode.appendChild(savBtnCtn);
-		getExtensionThenAssignClick(savBtn, getArtSource(), getArtName(), createArtNameTextNode);
+		await assignClick(savBtn, getArtSource(), getArtName(), createArtNameTextNode);
 	}
 
-	function refresh() {
+	async function refresh() {
 		const nameTxt = document.getElementById("artname-txt");
 		const saveBtn = document.getElementById("artname-btn");
 		if(nameTxt) {
@@ -449,7 +419,7 @@ function processDeviantArt() {
 			const newSaveBtn = saveBtn.cloneNode(true);
 			removeFailure(newSaveBtn);
 			saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
-			getExtensionThenAssignClick(newSaveBtn, getArtSource(), getArtName(), createArtNameTextNode);
+			await assignClick(newSaveBtn, getArtSource(), getArtName(), createArtNameTextNode);
 		}
 	}
 

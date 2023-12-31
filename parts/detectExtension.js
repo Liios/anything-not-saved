@@ -13,29 +13,33 @@ async function detectExtension(url, errorCallback) {
 		}
 	}
 	// If it does not work, we send a head query and infer extension from the response
-	const response = await GM_xmlhttpRequest({
-		method: "head",
-		url: url
-	});
-	const headers = response.responseHeaders;
-	const filename = /filename=".*?\.(\w+)"/;
-	const mimeType = /content-type: image\/(\w+)/;
-	let ext = null;
-	if(filename.test(headers)) {
-		ext = filename.exec(headers)[1];
-	} else if(mimeType.test(headers)) {
-		// Legacy handling of DeviantArt before it went full Eclipse
-		ext = mimeType.exec(headers)[1];
-	}
-	if(ext) {
-		// Finished!
-		return ext.replace("jpeg", "jpg");
-	}
-	// If we are here then nothing worked
-	if(response.status === 403) {
-		console.error("Could not determine extension of target: AJAX request denied by server.", response);
+	if(GM_xmlhttpRequest) {
+		const response = await GM_xmlhttpRequest({
+			method: "head",
+			url: url
+		});
+		const headers = response.responseHeaders;
+		const filename = /filename=".*?\.(\w+)"/;
+		const mimeType = /content-type: image\/(\w+)/;
+		let ext = null;
+		if(filename.test(headers)) {
+			ext = filename.exec(headers)[1];
+		} else if(mimeType.test(headers)) {
+			// Legacy handling of DeviantArt before it went full Eclipse
+			ext = mimeType.exec(headers)[1];
+		}
+		if(ext) {
+			// Finished!
+			return ext.replace("jpeg", "jpg");
+		}
+		// If we are here then nothing worked
+		if(response.status === 403) {
+			console.error("Cannot determine extension of target: AJAX request denied by server.", response);
+		} else {
+			console.error("Cannot determine extension of target."));
+		}
 	} else {
-		console.error("Could not determine extension of target."));
+		console.error("Cannot determine extension of target: no GM_xmlhttpRequest permission.");
 	}
 	errorCallback();
 	return null;
