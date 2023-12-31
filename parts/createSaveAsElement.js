@@ -15,6 +15,8 @@ function createSaveAsElement(tagName, urlList, artName, errorCallback) {
 	if (urlList.length > 1) {
 		btn.innerText = "Download all";
 	}
-	assignClick(btn, urlList, artName);
+	// The button stays hidden until all the AJAX requests to get file extensions are resolved
+	btn.style.display = "none";
+	assignClick(btn, urlList, artName).then(() => btn.style.display = "");
 	return btn;
 }

@@ -1,4 +1,4 @@
-function assignClick(btn, urlList, artName) {
+async function assignClick(btn, urlList, artName) {
 	if(typeof urlList === "string") {
 		urlList = [urlList];
 	}
@@ -6,7 +6,7 @@ function assignClick(btn, urlList, artName) {
 	const extList = [];
 	for(const i = 0; i < urlList.length; ++i) {
 		const url = urlList[i];
-		const ext = detectExtension(url);
+		const ext = await detectExtension(url);
 		extList[i] = ext;
 	}
 	btn.addEventListener("click", () => {

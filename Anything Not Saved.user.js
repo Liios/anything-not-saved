@@ -143,12 +143,14 @@ function createSaveAsElement(tagName, urlList, artName, errorCallback) {
 	if (urlList.length > 1) {
 		btn.innerText = "Download all";
 	}
-	assignClick(btn, urlList, artName);
+	// The button stays hidden until all the AJAX requests to get file extensions are resolved
+	btn.style.display = "none";
+	assignClick(btn, urlList, artName).then(() => btn.style.display = "");
 	return btn;
 }
 
 /** Assign the "Save as" event uppon button click. */
-function assignClick(btn, urlList, artName) {
+async function assignClick(btn, urlList, artName) {
 	if(typeof urlList === "string") {
 		urlList = [urlList];
 	}
@@ -156,7 +158,7 @@ function assignClick(btn, urlList, artName) {
 	const extList = [];
 	for(const i = 0; i < urlList.length; ++i) {
 		const url = urlList[i];
-		const ext = detectExtension(url);
+		const ext = await detectExtension(url);
 		extList[i] = ext;
 	}
 	btn.addEventListener("click", () => {
