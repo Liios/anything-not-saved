@@ -10,7 +10,7 @@ for each part in parts.files
 	dim partContent : partContent = readAsUtf8(part.path)
 	set funcMatcher = new RegExp
 	funcMatcher.multiLine = true
-	funcMatcher.pattern = "function " + fso.getBaseName(part) + "\(.*\) {[\S\s]+?^}$\r\n"
+	funcMatcher.pattern = "(async )?function " + fso.getBaseName(part) + "\(.*\) {[\S\s]+?^}$\r\n"
 	if funcMatcher.execute(buildContent).count = 0 then
 		lost = lost + fso.getBaseName(part) + " not found" + vbNewLine
 	end if
