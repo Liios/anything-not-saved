@@ -1,4 +1,3 @@
-/** HentaiFoundry is simple. */
 function processHentaiFoundry() {
 	const boxFooter = document.querySelector("#picBox .boxfooter");
 	if(boxFooter) {

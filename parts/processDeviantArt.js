@@ -1,6 +1,3 @@
-/** DeviantArt is horribly difficult, we need advanced magic to make things work.
-  * Even then, their server randomly denies AJAX request so the "Save as" doesn't always work.
-  */
 function processDeviantArt() {
 	let href = location.href;
 	let img = document.querySelector("div[data-hook=art_stage] img");

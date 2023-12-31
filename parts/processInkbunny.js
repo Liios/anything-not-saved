@@ -1,4 +1,3 @@
-/** InkBunny is simple. */
 function processInkbunny() {
 	const pictop = document.querySelector("#pictop");
 	if(pictop) {

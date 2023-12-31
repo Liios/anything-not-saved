@@ -5,16 +5,23 @@ const buildPath = "Anything Not Saved.user.js"
 dim buildContent : buildContent = readAsUtf8(buildPath)
 set fso = createObject("Scripting.FileSystemObject")
 set parts = fso.getFolder("./parts")
+dim lost : lost = ""
 for each part in parts.files
 	dim partContent : partContent = readAsUtf8(part.path)
 	set funcMatcher = new RegExp
-	funcMatcher.global = true
 	funcMatcher.multiLine = true
-	funcMatcher.pattern = "\/\*\*.*\*\/\nfunction " + fso.getBaseName(part) + "(.|\n)*?\n}\n"
+	funcMatcher.pattern = "function " + fso.getBaseName(part) + "\(.*\) {[\S\s]+?^}$\r\n"
+	if funcMatcher.execute(buildContent).count = 0 then
+		lost = lost + fso.getBaseName(part) + " not found" + vbNewLine
+	end if
 	buildContent = funcMatcher.replace(buildContent, partContent)
 next
 writeAsUtf8 buildPath, buildContent
-msgBox "Done"
+if len(lost) > 0 then
+	msgBox lost
+else
+	msgBox "Done"
+end if
 
 function readAsUtf8(filePath)
 	set stream = createObject("ADODB.Stream")

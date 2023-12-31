@@ -1,4 +1,3 @@
-/** FurAffinity is simple. */
 function processFuraffinity() {
 	const actions = document.querySelector("#page-submission .actions");
 	const betaSection = document.querySelector("#submission_page .submission-sidebar");

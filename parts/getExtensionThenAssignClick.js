@@ -1,8 +1,3 @@
-/** Use a AJAX request in order to get the image extension when it's not in the URL.
-  * Usually needs a cross-scripting permission to access the CDN.
-  * It also means the button will take more time to appear.
-  * https://www.tampermonkey.net/documentation.php#GM_xmlhttpRequest
-  */
 function getExtensionThenAssignClick(btn, url, name, errorCallback) {
 	if(forceFailure) {
 		admitFailure(btn, errorCallback);

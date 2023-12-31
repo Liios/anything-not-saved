@@ -1,6 +1,3 @@
-/** Newgrounds...
-  * TODO: résoudre le bordel de slideshow
-  */
 function processNewgrounds() {
 	const name = parseName(document.title.substr(0, document.title.length - 14));
 	const bar = document.querySelectorAll(".pod-head")[0];

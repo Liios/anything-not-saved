@@ -1,4 +1,3 @@
-/** Eka's Portal is a bit tricky and sometimes requires XMLHttpRequest, especially for text files. */
 function processAryion() {
 	const gboxes = document.querySelectorAll(".g-box");
 	for(let gbox of gboxes) {

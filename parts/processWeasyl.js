@@ -1,4 +1,3 @@
-/** Weasyl is simple. */
 function processWeasyl() {
 	const name = parseName(document.querySelector("h1#detail-title").innerText);
 	const bar = document.querySelector("ul#detail-actions");

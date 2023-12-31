@@ -1,5 +1,4 @@
-/** Assign the "Save as" event uppon button click. */
-function assignClick(btn, urlList, name, ext) {
+function assignClick(btn, urlList, artName) {
 	let keepGoing = true;
 	btn.addEventListener("click", () => triggerAction());
 	// The button is revealed now that it is finished
@@ -20,7 +19,7 @@ function assignClick(btn, urlList, name, ext) {
 		if(oneUrl) {
 			GM_download({
 				url: oneUrl,
-				name: name + "." + ext,
+				name: artName + "." + ext,
 				saveAs: true,
 				onload: unsetBusy,
 				ontimeout: () => handleTimeout(),
@@ -41,7 +40,7 @@ function assignClick(btn, urlList, name, ext) {
 		const url = urlList[i];
 		GM_download({
 			url: url,
-			name: name + " - " + (i + 1) + "." + ext,
+			name: artName + " - " + (i + 1) + "." + ext,
 			saveAs: false,
 			onload: () => recursiveDownload(i + 1),
 			ontimeout: () => handleTimeout(),
