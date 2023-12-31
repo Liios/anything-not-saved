@@ -150,7 +150,7 @@ function createSaveAsElement(tagName, urlList, artName, errorCallback) {
 }
 
 /** Assign the "Save as" event uppon button click. */
-async function assignClick(btn, urlList, artName) {
+async function assignClick(btn, urlList, artName, errorCallback) {
 	if(typeof urlList === "string") {
 		urlList = [urlList];
 	}
@@ -158,7 +158,7 @@ async function assignClick(btn, urlList, artName) {
 	const extList = [];
 	for(const i = 0; i < urlList.length; ++i) {
 		const url = urlList[i];
-		const ext = await detectExtension(url);
+		const ext = await detectExtension(url, errorCallback);
 		extList[i] = ext;
 	}
 	btn.addEventListener("click", () => {
@@ -204,6 +204,7 @@ async function assignClick(btn, urlList, artName) {
 	function handleTimeout() {
 		alert("The download target has timed out :(");
 		unsetBusy();
+		errorCallback();
 	}
 
 	function handleError(error, ext) {
@@ -235,6 +236,7 @@ async function assignClick(btn, urlList, artName) {
 				break;
 		}
 		unsetBusy();
+		errorCallback();
 	}
 }
 
@@ -278,7 +280,7 @@ function getExtensionThenAssignClick(btn, url, name, errorCallback) {
 }
 
 /** Detects the extension of the file to download. */
-async function detectExtension(url) {
+async function detectExtension(url, errorCallback) {
 	// Tries to fetch the file extension from the supplied URL
 	// This is the simplest method but it does not alway work
 	const type = /\.(\w{3,4})\?|\.(\w{3,4})$/;
@@ -287,13 +289,16 @@ async function detectExtension(url) {
 		const ext = type.exec(firstUrl).filter(el => el !== undefined)[1];
 		// Excludes web pages that indirectly deliver content
 		const invalidExtensions = ["html", "htm", "php", "jsp", "asp"];
-		if (invalidExtensions.includes(ext)) {
-			return null;
+		if (!invalidExtensions.includes(ext)) {
+			// Finished!
+			return ext;
 		}
-		return ext;
 	}
 	// If it does not work, we send a head query and infer extension from the response
-	const response = await GM_xmlhttpRequest({ method: "head", url });
+	const response = await GM_xmlhttpRequest({
+		method: "head",
+		url: url
+	});
 	const headers = response.responseHeaders;
 	const filename = /filename=".*?\.(\w+)"/;
 	const mimeType = /content-type: image\/(\w+)/;
@@ -305,13 +310,16 @@ async function detectExtension(url) {
 		ext = mimeType.exec(headers)[1];
 	}
 	if(ext) {
+		// Finished!
 		return ext.replace("jpeg", "jpg");
 	}
+	// If we are here then nothing worked
 	if(response.status === 403) {
 		console.error("Could not determine extension of target: AJAX request denied by server.", response);
 	} else {
 		console.error("Could not determine extension of target."));
 	}
+	errorCallback();
 	return null;
 }
 

@@ -1,4 +1,4 @@
-async function detectExtension(url) {
+async function detectExtension(url, errorCallback) {
 	// Tries to fetch the file extension from the supplied URL
 	// This is the simplest method but it does not alway work
 	const type = /\.(\w{3,4})\?|\.(\w{3,4})$/;
@@ -7,13 +7,16 @@ async function detectExtension(url) {
 		const ext = type.exec(firstUrl).filter(el => el !== undefined)[1];
 		// Excludes web pages that indirectly deliver content
 		const invalidExtensions = ["html", "htm", "php", "jsp", "asp"];
-		if (invalidExtensions.includes(ext)) {
-			return null;
+		if (!invalidExtensions.includes(ext)) {
+			// Finished!
+			return ext;
 		}
-		return ext;
 	}
 	// If it does not work, we send a head query and infer extension from the response
-	const response = await GM_xmlhttpRequest({ method: "head", url });
+	const response = await GM_xmlhttpRequest({
+		method: "head",
+		url: url
+	});
 	const headers = response.responseHeaders;
 	const filename = /filename=".*?\.(\w+)"/;
 	const mimeType = /content-type: image\/(\w+)/;
@@ -25,12 +28,15 @@ async function detectExtension(url) {
 		ext = mimeType.exec(headers)[1];
 	}
 	if(ext) {
+		// Finished!
 		return ext.replace("jpeg", "jpg");
 	}
+	// If we are here then nothing worked
 	if(response.status === 403) {
 		console.error("Could not determine extension of target: AJAX request denied by server.", response);
 	} else {
 		console.error("Could not determine extension of target."));
 	}
+	errorCallback();
 	return null;
 }

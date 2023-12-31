@@ -1,4 +1,4 @@
-async function assignClick(btn, urlList, artName) {
+async function assignClick(btn, urlList, artName, errorCallback) {
 	if(typeof urlList === "string") {
 		urlList = [urlList];
 	}
@@ -6,7 +6,7 @@ async function assignClick(btn, urlList, artName) {
 	const extList = [];
 	for(const i = 0; i < urlList.length; ++i) {
 		const url = urlList[i];
-		const ext = await detectExtension(url);
+		const ext = await detectExtension(url, errorCallback);
 		extList[i] = ext;
 	}
 	btn.addEventListener("click", () => {
@@ -52,6 +52,7 @@ async function assignClick(btn, urlList, artName) {
 	function handleTimeout() {
 		alert("The download target has timed out :(");
 		unsetBusy();
+		errorCallback();
 	}
 
 	function handleError(error, ext) {
@@ -83,5 +84,6 @@ async function assignClick(btn, urlList, artName) {
 				break;
 		}
 		unsetBusy();
+		errorCallback();
 	}
 }
