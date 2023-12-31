@@ -1,4 +1,8 @@
 async function assignClick(btn, urlList, artName, errorCallback) {
+	if(forceFailure) {
+		admitFailure(btn, errorCallback);
+		return;
+	}
 	if(typeof urlList === "string") {
 		urlList = [urlList];
 	}
