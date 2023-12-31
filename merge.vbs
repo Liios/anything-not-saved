@@ -11,7 +11,7 @@ for each part in parts.files
 	funcMatcher.global = true
 	funcMatcher.multiLine = true
 	funcMatcher.pattern = "\/\*\*.*\*\/\nfunction " + fso.getBaseName(part) + "(.|\n)*?\n}\n"
-	funcMatcher.replace buildContent, partContent
+	buildContent = funcMatcher.replace(buildContent, partContent)
 next
 writeAsUtf8 buildPath, buildContent
 msgBox "Done"
