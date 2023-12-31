@@ -145,7 +145,9 @@ function createSaveAsElement(tagName, urlList, artName, errorCallback) {
 	}
 	// The button stays hidden until all the AJAX requests to get file extensions are resolved
 	btn.style.display = "none";
-	assignClick(btn, urlList, artName).then(() => btn.style.display = "");
+	assignClick(btn, urlList, artName).then(() => {
+		btn.style.display = "";
+	});
 	return btn;
 }
 
@@ -166,9 +168,11 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 		setBusy();
 		// Only one picture to be saved as
 		if(urlList.length === 1) {
+			const url = urlList[0];
+			const ext = extList[0];
 			GM_download({
-				url: urlList[0],
-				name: artName + "." + extList[0],
+				url: url,
+				name: artName + "." + ext,
 				saveAs: true,
 				onload: unsetBusy,
 				ontimeout: () => handleTimeout(),
@@ -178,9 +182,11 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 			// Batch downloading of multiple pictures
 			const requestList = [];
 			for(const i = 0; i < urlList.length; ++i) {
+				const url = urlList[i];
+				const ext = extList[i];
 				const request = GM_download({
-					url: urlList[i],
-					name: artName + " - " + (i + 1) + "." + extList[i],
+					url: url,
+					name: artName + " - " + (i + 1) + "." + ext,
 					saveAs: false,
 					ontimeout: () => handleTimeout(),
 					onerror: error => handleError(error, ext),
@@ -252,7 +258,7 @@ async function detectExtension(url, errorCallback) {
 	const type = /\.(\w{3,4})\?|\.(\w{3,4})$/;
 	if(type.test(url)) {
 		// For some reason, there is sometimes 'undefined' in matched groups...
-		const ext = type.exec(firstUrl).filter(el => el !== undefined)[1];
+		const ext = type.exec(url).filter(el => el !== undefined)[1];
 		// Excludes web pages that indirectly deliver content
 		const invalidExtensions = ["html", "htm", "php", "jsp", "asp"];
 		if (!invalidExtensions.includes(ext)) {
@@ -284,7 +290,7 @@ async function detectExtension(url, errorCallback) {
 		if(response.status === 403) {
 			console.error("Cannot determine extension of target: AJAX request denied by server.", response);
 		} else {
-			console.error("Cannot determine extension of target."));
+			console.error("Cannot determine extension of target.");
 		}
 	} else {
 		console.error("Cannot determine extension of target: no GM_xmlhttpRequest permission.");

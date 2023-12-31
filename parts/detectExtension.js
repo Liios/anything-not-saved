@@ -4,7 +4,7 @@ async function detectExtension(url, errorCallback) {
 	const type = /\.(\w{3,4})\?|\.(\w{3,4})$/;
 	if(type.test(url)) {
 		// For some reason, there is sometimes 'undefined' in matched groups...
-		const ext = type.exec(firstUrl).filter(el => el !== undefined)[1];
+		const ext = type.exec(url).filter(el => el !== undefined)[1];
 		// Excludes web pages that indirectly deliver content
 		const invalidExtensions = ["html", "htm", "php", "jsp", "asp"];
 		if (!invalidExtensions.includes(ext)) {
@@ -36,7 +36,7 @@ async function detectExtension(url, errorCallback) {
 		if(response.status === 403) {
 			console.error("Cannot determine extension of target: AJAX request denied by server.", response);
 		} else {
-			console.error("Cannot determine extension of target."));
+			console.error("Cannot determine extension of target.");
 		}
 	} else {
 		console.error("Cannot determine extension of target: no GM_xmlhttpRequest permission.");

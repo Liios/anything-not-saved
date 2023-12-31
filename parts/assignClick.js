@@ -14,9 +14,11 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 		setBusy();
 		// Only one picture to be saved as
 		if(urlList.length === 1) {
+			const url = urlList[0];
+			const ext = extList[0];
 			GM_download({
-				url: urlList[0],
-				name: artName + "." + extList[0],
+				url: url,
+				name: artName + "." + ext,
 				saveAs: true,
 				onload: unsetBusy,
 				ontimeout: () => handleTimeout(),
@@ -26,9 +28,11 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 			// Batch downloading of multiple pictures
 			const requestList = [];
 			for(const i = 0; i < urlList.length; ++i) {
+				const url = urlList[i];
+				const ext = extList[i];
 				const request = GM_download({
-					url: urlList[i],
-					name: artName + " - " + (i + 1) + "." + extList[i],
+					url: url,
+					name: artName + " - " + (i + 1) + "." + ext,
 					saveAs: false,
 					ontimeout: () => handleTimeout(),
 					onerror: error => handleError(error, ext),

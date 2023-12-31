@@ -17,6 +17,8 @@ function createSaveAsElement(tagName, urlList, artName, errorCallback) {
 	}
 	// The button stays hidden until all the AJAX requests to get file extensions are resolved
 	btn.style.display = "none";
-	assignClick(btn, urlList, artName).then(() => btn.style.display = "");
+	assignClick(btn, urlList, artName).then(() => {
+		btn.style.display = "";
+	});
 	return btn;
 }
