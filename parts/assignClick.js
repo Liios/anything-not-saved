@@ -1,25 +1,22 @@
 function assignClick(btn, urlList, artName) {
-	let keepGoing = true;
-	btn.addEventListener("click", () => triggerAction());
-	// The button is revealed now that it is finished
-	if(urlList && ext) {
-		btn.style.display = "";
+	if(typeof urlList === "string") {
+		urlList = [urlList];
 	}
-
-	function triggerAction() {
+	// Retrieves the targets extensions
+	const extList = [];
+	for(const i = 0; i < urlList.length; ++i) {
+		const url = urlList[i];
+		const ext = detectExtension(url);
+		extList[i] = ext;
+	}
+	btn.addEventListener("click", () => {
 		// No rage-clicks
 		setBusy();
 		// Only one picture to be saved as
-		let oneUrl = null;
-		if(typeof urlList === "string") {
-			oneUrl = urlList;
-		} else if (urlList.length < 2) {
-			oneUrl = urlList[0];
-		}
-		if(oneUrl) {
+		if(urlList.length === 1) {
 			GM_download({
-				url: oneUrl,
-				name: artName + "." + ext,
+				url: urlList[0],
+				name: artName + "." + extList[0],
 				saveAs: true,
 				onload: unsetBusy,
 				ontimeout: () => handleTimeout(),
@@ -27,37 +24,29 @@ function assignClick(btn, urlList, artName) {
 			});
 		} else {
 			// Batch downloading of multiple pictures
-			recursiveDownload(0);
+			const requestList = [];
+			for(const i = 0; i < urlList.length; ++i) {
+				const request = GM_download({
+					url: urlList[i],
+					name: artName + " - " + (i + 1) + "." + extList[i],
+					saveAs: false,
+					ontimeout: () => handleTimeout(),
+					onerror: error => handleError(error, ext),
+				});
+				requestList.push(request);
+			}
+			Promise.all(requestList).then(unsetBusy);
 		}
-	}
-
-	function recursiveDownload(i) {
-		const goDeeper = i < urlList.length && keepGoing;
-		if (!goDeeper) {
-			unsetBusy();
-			return;
-		}
-		const url = urlList[i];
-		GM_download({
-			url: url,
-			name: artName + " - " + (i + 1) + "." + ext,
-			saveAs: false,
-			onload: () => recursiveDownload(i + 1),
-			ontimeout: () => handleTimeout(),
-			onerror: error => handleError(error, ext),
-		});
-	}
+	});
 
 	function setBusy() {
 		btn.disabled = true;
 		btn.style.cursor = "wait";
-		keepGoing = true;
 	}
 
 	function unsetBusy() {
 		btn.disabled = false;
 		btn.style.cursor = "";
-		keepGoing = false;
 	}
 
 	function handleTimeout() {

@@ -143,54 +143,30 @@ function createSaveAsElement(tagName, urlList, artName, errorCallback) {
 	if (urlList.length > 1) {
 		btn.innerText = "Download all";
 	}
-	// The button stays hidden until everything is set up
-	// This is because the possible XMLHttpRequest might take some time before completing
-	btn.style.display = "none";
-	
-	
-	if(type.test(firstUrl)) {
-		// For some reason, there is sometimes 'undefined' in matched groups...
-		const ext = type.exec(firstUrl).filter(el => el !== undefined)[1];
-		// Excludes web pages that indirectly deliver content
-		const invalidExtensions = ["html", "htm", "php", "jsp", "asp"];
-		if(!invalidExtensions.includes(ext)) {
-			assignClick(btn, urlList, artName, ext);
-			return btn;
-		}
-	}
-
-	// If it does not work, we query the resource and get its extension from the filename
-	getExtensionThenAssignClick(btn, firstUrl, artName, errorCallback);
-	return btn;
-
-	// If we arrive here, nothing has worked
-	admitFailure(btn, errorCallback);
+	assignClick(btn, urlList, artName);
 	return btn;
 }
 
 /** Assign the "Save as" event uppon button click. */
 function assignClick(btn, urlList, artName) {
-	let keepGoing = true;
-	btn.addEventListener("click", () => triggerAction());
-	// The button is revealed now that it is finished
-	if(urlList && ext) {
-		btn.style.display = "";
+	if(typeof urlList === "string") {
+		urlList = [urlList];
 	}
-
-	function triggerAction() {
+	// Retrieves the targets extensions
+	const extList = [];
+	for(const i = 0; i < urlList.length; ++i) {
+		const url = urlList[i];
+		const ext = detectExtension(url);
+		extList[i] = ext;
+	}
+	btn.addEventListener("click", () => {
 		// No rage-clicks
 		setBusy();
 		// Only one picture to be saved as
-		let oneUrl = null;
-		if(typeof urlList === "string") {
-			oneUrl = urlList;
-		} else if (urlList.length < 2) {
-			oneUrl = urlList[0];
-		}
-		if(oneUrl) {
+		if(urlList.length === 1) {
 			GM_download({
-				url: oneUrl,
-				name: artName + "." + ext,
+				url: urlList[0],
+				name: artName + "." + extList[0],
 				saveAs: true,
 				onload: unsetBusy,
 				ontimeout: () => handleTimeout(),
@@ -198,37 +174,29 @@ function assignClick(btn, urlList, artName) {
 			});
 		} else {
 			// Batch downloading of multiple pictures
-			recursiveDownload(0);
+			const requestList = [];
+			for(const i = 0; i < urlList.length; ++i) {
+				const request = GM_download({
+					url: urlList[i],
+					name: artName + " - " + (i + 1) + "." + extList[i],
+					saveAs: false,
+					ontimeout: () => handleTimeout(),
+					onerror: error => handleError(error, ext),
+				});
+				requestList.push(request);
+			}
+			Promise.all(requestList).then(unsetBusy);
 		}
-	}
-
-	function recursiveDownload(i) {
-		const goDeeper = i < urlList.length && keepGoing;
-		if (!goDeeper) {
-			unsetBusy();
-			return;
-		}
-		const url = urlList[i];
-		GM_download({
-			url: url,
-			name: artName + " - " + (i + 1) + "." + ext,
-			saveAs: false,
-			onload: () => recursiveDownload(i + 1),
-			ontimeout: () => handleTimeout(),
-			onerror: error => handleError(error, ext),
-		});
-	}
+	});
 
 	function setBusy() {
 		btn.disabled = true;
 		btn.style.cursor = "wait";
-		keepGoing = true;
 	}
 
 	function unsetBusy() {
 		btn.disabled = false;
 		btn.style.cursor = "";
-		keepGoing = false;
 	}
 
 	function handleTimeout() {
