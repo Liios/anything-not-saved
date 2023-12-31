@@ -41,6 +41,6 @@ async function detectExtension(url, errorCallback) {
 	} else {
 		console.error("Cannot determine extension of target: no GM_xmlhttpRequest permission.");
 	}
-	errorCallback();
+	admitFailure(btn, errorCallback);
 	return null;
 }
