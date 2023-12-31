@@ -4,7 +4,7 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 	}
 	// Retrieves the targets extensions
 	const extList = [];
-	for(const i = 0; i < urlList.length; ++i) {
+	for(let i = 0; i < urlList.length; ++i) {
 		const url = urlList[i];
 		const ext = await detectExtension(url, errorCallback);
 		extList[i] = ext;
@@ -27,7 +27,7 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 		} else {
 			// Batch downloading of multiple pictures
 			const requestList = [];
-			for(const i = 0; i < urlList.length; ++i) {
+			for(let i = 0; i < urlList.length; ++i) {
 				const url = urlList[i];
 				const ext = extList[i];
 				const request = GM_download({
@@ -56,7 +56,6 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 	function handleTimeout() {
 		alert("The download target has timed out :(");
 		unsetBusy();
-		errorCallback();
 	}
 
 	function handleError(error, ext) {
@@ -88,6 +87,5 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 				break;
 		}
 		unsetBusy();
-		errorCallback();
 	}
 }
