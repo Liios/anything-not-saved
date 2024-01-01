@@ -741,6 +741,7 @@ window.addEventListener("load", function() {
 });
 
 /* Changelog:
+ ** 5.4: handled Newgrounds slideshow, improved DA, refactored all the asynchronous sub-processes
  ** 5.3: fixed Newgrounds (+improved integration) and replaced @include with @match
  ** 5.2: fixed dumb issue ("data-hook") with DA
  ** 5.1.1: fixed InkBunny image catching when download link is missing
