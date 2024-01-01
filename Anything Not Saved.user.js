@@ -220,13 +220,13 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 					url: url,
 					name: artName + " - " + (i + 1) + "." + ext,
 					saveAs: false
+				}).catch(error => {
+					handleError(error, ext);
 				});
 				requestList.push(request);
 			}
 			Promise.all(requestList).then(response => {
 				unsetBusy();
-			}).catch(error => {
-				handleError(error, ext);
 			});
 		}
 	});
