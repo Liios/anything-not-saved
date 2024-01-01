@@ -186,6 +186,7 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 		} else {
 			// Batch downloading of multiple pictures
 			const requestList = [];
+			btn.innerText = "Download (0/" + urlList.length + ")";
 			for(let i = 0; i < urlList.length; ++i) {
 				const url = urlList[i];
 				const ext = extList[i];
@@ -199,13 +200,13 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 				});
 				requestList.push(request);
 			}
-			await Promise.all(requestList);
-			unsetBusy();
+			Promise.all(requestList).then(unsetBusy);
 		}
 	});
 	
 	function completeOne() {
 		completed++;
+		btn.innerText = "Download (" + completed + "/" + urlList.length + ")";
 	}
 
 	function setBusy() {
@@ -216,6 +217,7 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 	function unsetBusy() {
 		btn.disabled = false;
 		btn.style.cursor = "";
+		completed = 0;
 	}
 
 	function handleError(error, ext) {
