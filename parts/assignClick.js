@@ -8,7 +8,8 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 	}
 	// Retrieves the targets extensions
 	const extList = [];
-	for(let i = 0; i < urlList.length; ++i) {
+	const total = urlList.length;
+	for(let i = 0; i < total; ++i) {
 		const url = urlList[i];
 		const ext = await detectExtension(btn, url, errorCallback);
 		extList[i] = ext;
@@ -18,7 +19,7 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 		// No rage-clicks
 		setBusy();
 		// Only one picture to be saved as
-		if(urlList.length === 1) {
+		if(total === 1) {
 			const url = urlList[0];
 			const ext = extList[0];
 			await GM.download({
@@ -32,13 +33,13 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 		} else {
 			// Batch downloading of multiple pictures
 			const requestList = [];
-			btn.innerText = "Download (0/" + urlList.length + ")";
-			for(let i = 0; i < urlList.length; ++i) {
+			btn.innerText = "Download (0/" + total + ")";
+			for(let i = 0; i < total; ++i) {
 				const url = urlList[i];
 				const ext = extList[i];
 				const request = GM.download({
 					url: url,
-					name: artName + " - " + (i + 1) + "." + ext,
+					name: artName + " - " + padWithZeroes(i + 1, total) + "." + ext,
 					saveAs: false,
 					onload: response => completeOne(),
 					onerror: error => handleError(error, ext),
@@ -52,7 +53,7 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 	
 	function completeOne() {
 		completed++;
-		btn.innerText = "Download (" + completed + "/" + urlList.length + ")";
+		btn.innerText = "Download (" + completed + "/" + total + ")";
 	}
 
 	function setBusy() {
