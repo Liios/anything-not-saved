@@ -13,21 +13,21 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 		const ext = await detectExtension(btn, url, errorCallback);
 		extList[i] = ext;
 	}
-	btn.addEventListener("click", () => {
+	let completed = 0;
+	btn.addEventListener("click", async () => {
 		// No rage-clicks
 		setBusy();
 		// Only one picture to be saved as
 		if(urlList.length === 1) {
 			const url = urlList[0];
 			const ext = extList[0];
-			downloadAsPromise({
+			await GM.download({
 				url: url,
 				name: artName + "." + ext,
-				saveAs: true
-			}).then(response => {
-				unsetBusy();
-			}).catch(error => {
-				handleError(error, ext);
+				saveAs: true,
+				onload: response => unsetBusy(),
+				onerror: error => handleError(error, ext),
+				ontimeout: () => handleTimeout()
 			});
 		} else {
 			// Batch downloading of multiple pictures
@@ -35,20 +35,24 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 			for(let i = 0; i < urlList.length; ++i) {
 				const url = urlList[i];
 				const ext = extList[i];
-				const request = downloadAsPromise({
+				const request = GM.download({
 					url: url,
 					name: artName + " - " + (i + 1) + "." + ext,
-					saveAs: false
-				}).catch(error => {
-					handleError(error, ext);
+					saveAs: false,
+					onload: response => completeOne(),
+					onerror: error => handleError(error, ext),
+					ontimeout: () => handleTimeout()
 				});
 				requestList.push(request);
 			}
-			Promise.all(requestList).then(response => {
-				unsetBusy();
-			});
+			await Promise.all(requestList);
+			unsetBusy();
 		}
 	});
+	
+	function completeOne() {
+		completed++;
+	}
 
 	function setBusy() {
 		btn.disabled = true;
@@ -58,11 +62,6 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 	function unsetBusy() {
 		btn.disabled = false;
 		btn.style.cursor = "";
-	}
-
-	function handleTimeout() {
-		alert("The download target has timed out :(");
-		unsetBusy();
 	}
 
 	function handleError(error, ext) {
@@ -93,6 +92,11 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 				alert("GM_download has unexpectedly failed with the following error: " + error.error);
 				break;
 		}
+		unsetBusy();
+	}
+	
+	function handleTimeout() {
+		alert("The download target has timed out :(");
 		unsetBusy();
 	}
 }

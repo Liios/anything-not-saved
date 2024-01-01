@@ -122,33 +122,6 @@ function addCssRule(cssRule) {
 	document.getElementsByTagName("head")[0].appendChild(style);
 }
 
-/** Converts GM_xmlhttpRequest to a Promise. */
-function requestAsPromise({method, url}) {
-	return new Promise((resolve, reject) => {
-		GM_xmlhttpRequest({
-			method,
-			url,
-			onload: response => resolve(response),
-			onerror: error => reject(error),
-			ontimeout: timeout => reject(timeout)
-		});
-	});
-}
-
-/** Converts GM_download to a Promise. */
-function downloadAsPromise({url, name, saveAs}) {
-	return new Promise((resolve, reject) => {
-		GM_download({
-			url,
-			name,
-			saveAs,
-			onload: response => resolve(response),
-			onerror: error => reject(error),
-			ontimeout: timeout => reject(timeout)
-		});
-	});
-}
-
 /** Creates a generic "Save as" button (or link, if specified).
   * When clicked it will open the "Save as" dialog with the corrected filename.
   * https://www.tampermonkey.net/documentation.php#GM_download
@@ -160,7 +133,7 @@ function createSaveAsElement(tagName, urlList, artName, errorCallback) {
 	}
 	btn.id = "artname-btn";
 	btn.innerText = "Save as";
-	if (!urlList || !GM_download || forceFailure) {
+	if (!urlList || !GM.download || forceFailure) {
 		admitFailure(btn, errorCallback);
 		return btn;
 	}
@@ -194,21 +167,21 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 		const ext = await detectExtension(btn, url, errorCallback);
 		extList[i] = ext;
 	}
-	btn.addEventListener("click", () => {
+	let completed = 0;
+	btn.addEventListener("click", async () => {
 		// No rage-clicks
 		setBusy();
 		// Only one picture to be saved as
 		if(urlList.length === 1) {
 			const url = urlList[0];
 			const ext = extList[0];
-			downloadAsPromise({
+			await GM.download({
 				url: url,
 				name: artName + "." + ext,
-				saveAs: true
-			}).then(response => {
-				unsetBusy();
-			}).catch(error => {
-				handleError(error, ext);
+				saveAs: true,
+				onload: response => unsetBusy(),
+				onerror: error => handleError(error, ext),
+				ontimeout: () => handleTimeout()
 			});
 		} else {
 			// Batch downloading of multiple pictures
@@ -216,20 +189,24 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 			for(let i = 0; i < urlList.length; ++i) {
 				const url = urlList[i];
 				const ext = extList[i];
-				const request = downloadAsPromise({
+				const request = GM.download({
 					url: url,
 					name: artName + " - " + (i + 1) + "." + ext,
-					saveAs: false
-				}).catch(error => {
-					handleError(error, ext);
+					saveAs: false,
+					onload: response => completeOne(),
+					onerror: error => handleError(error, ext),
+					ontimeout: () => handleTimeout()
 				});
 				requestList.push(request);
 			}
-			Promise.all(requestList).then(response => {
-				unsetBusy();
-			});
+			await Promise.all(requestList);
+			unsetBusy();
 		}
 	});
+	
+	function completeOne() {
+		completed++;
+	}
 
 	function setBusy() {
 		btn.disabled = true;
@@ -239,11 +216,6 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 	function unsetBusy() {
 		btn.disabled = false;
 		btn.style.cursor = "";
-	}
-
-	function handleTimeout() {
-		alert("The download target has timed out :(");
-		unsetBusy();
 	}
 
 	function handleError(error, ext) {
@@ -276,6 +248,11 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 		}
 		unsetBusy();
 	}
+	
+	function handleTimeout() {
+		alert("The download target has timed out :(");
+		unsetBusy();
+	}
 }
 
 /** Attempts to detect the extension of the download target from the URL.
@@ -299,19 +276,24 @@ async function detectExtension(btn, url, errorCallback) {
 		}
 	}
 	// If it does not work, we send a head query and infer extension from the response
-	if(GM_xmlhttpRequest) {
+	if(GM.xmlHttpRequest) {
 		let ext = null;
-		const response = await requestAsPromise({
+		const response = await GM.xmlHttpRequest({
 			method: "head",
-			url: url
-		}).catch(error => {
-			if(error.status === 403) {
-				// TODO: add referer
-				console.error("Cannot determine extension of target: AJAX request denied by server.", error);
-			} else {
-				console.error("Cannot determine extension of target.", error);
+			url: url,
+			onerror: error => {
+				if(error.status === 403) {
+					// TODO: add referer
+					console.error("Cannot determine extension of target: AJAX request denied by server.", error);
+				} else {
+					console.error("Cannot determine extension of target.", error);
+				}
+				admitFailure(btn, errorCallback);
+			},
+			ontimeout: () => {
+				console.error("Cannot determine extension of target: AJAX request timed out.");
+				admitFailure(btn, errorCallback);
 			}
-			admitFailure(btn, errorCallback);
 		});
 		const headers = response.responseHeaders;
 		const filename = /filename=".*?\.(\w+)"/;

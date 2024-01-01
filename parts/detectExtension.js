@@ -13,19 +13,24 @@ async function detectExtension(btn, url, errorCallback) {
 		}
 	}
 	// If it does not work, we send a head query and infer extension from the response
-	if(GM_xmlhttpRequest) {
+	if(GM.xmlHttpRequest) {
 		let ext = null;
-		const response = await requestAsPromise({
+		const response = await GM.xmlHttpRequest({
 			method: "head",
-			url: url
-		}).catch(error => {
-			if(error.status === 403) {
-				// TODO: add referer
-				console.error("Cannot determine extension of target: AJAX request denied by server.", error);
-			} else {
-				console.error("Cannot determine extension of target.", error);
+			url: url,
+			onerror: error => {
+				if(error.status === 403) {
+					// TODO: add referer
+					console.error("Cannot determine extension of target: AJAX request denied by server.", error);
+				} else {
+					console.error("Cannot determine extension of target.", error);
+				}
+				admitFailure(btn, errorCallback);
+			},
+			ontimeout: () => {
+				console.error("Cannot determine extension of target: AJAX request timed out.");
+				admitFailure(btn, errorCallback);
 			}
-			admitFailure(btn, errorCallback);
 		});
 		const headers = response.responseHeaders;
 		const filename = /filename=".*?\.(\w+)"/;
