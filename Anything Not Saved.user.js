@@ -21,8 +21,8 @@
 // @updateURL	https://openuserjs.org/meta/Sauvegarde/Anything_Not_Saved.meta.js
 // @downloadURL	https://openuserjs.org/install/Sauvegarde/Anything_Not_Saved.user.js
 // @supportURL	https://openuserjs.org/scripts/Sauvegarde/Anything_Not_Saved/issues
-// @copyright	2017, Sauvegarde (https://openuserjs.org/users/Sauvegarde)
-// @license		MIT
+// @copyright	2024, Sauvegarde (https://openuserjs.org/users/Sauvegarde)
+// @license		GPL-3.0
 // ==/UserScript==
 
 /* `Anything Not Saved` will attempt to create a "Save as" button near artworks in compatible websites.
