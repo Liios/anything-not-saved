@@ -122,6 +122,33 @@ function addCssRule(cssRule) {
 	document.getElementsByTagName("head")[0].appendChild(style);
 }
 
+/** Converts GM_xmlhttpRequest to a Promise. */
+function requestAsPromise({method, url}) {
+	return new Promise((resolve, reject) => {
+		GM_xmlhttpRequest({
+			method,
+			url,
+			onload: response => resolve(response),
+			onerror: error => reject(error),
+			ontimeout: timeout => reject(timeout)
+		});
+	});
+}
+
+/** Converts GM_download to a Promise. */
+function downloadAsPromise({url, name, saveAs}) {
+	return new Promise((resolve, reject) => {
+		GM_download({
+			url,
+			name,
+			saveAs,
+			onload: response => resolve(response),
+			onerror: error => reject(error),
+			ontimeout: timeout => reject(timeout)
+		});
+	});
+}
+
 /** Creates a generic "Save as" button (or link, if specified).
   * When clicked it will open the "Save as" dialog with the corrected filename.
   * https://www.tampermonkey.net/documentation.php#GM_download
@@ -153,6 +180,10 @@ function createSaveAsElement(tagName, urlList, artName, errorCallback) {
 
 /** Assign the "Save as" event uppon button click. */
 async function assignClick(btn, urlList, artName, errorCallback) {
+	if(forceFailure) {
+		admitFailure(btn, errorCallback);
+		return;
+	}
 	if(typeof urlList === "string") {
 		urlList = [urlList];
 	}
@@ -160,7 +191,7 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 	const extList = [];
 	for(let i = 0; i < urlList.length; ++i) {
 		const url = urlList[i];
-		const ext = await detectExtension(url, errorCallback);
+		const ext = await detectExtension(btn, url, errorCallback);
 		extList[i] = ext;
 	}
 	btn.addEventListener("click", () => {
@@ -170,13 +201,14 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 		if(urlList.length === 1) {
 			const url = urlList[0];
 			const ext = extList[0];
-			GM_download({
+			downloadAsPromise({
 				url: url,
 				name: artName + "." + ext,
-				saveAs: true,
-				onload: unsetBusy,
-				ontimeout: () => handleTimeout(),
-				onerror: error => handleError(error, ext),
+				saveAs: true
+			}).then(response => {
+				unsetBusy();
+			}).catch(error => {
+				handleError(error, ext);
 			});
 		} else {
 			// Batch downloading of multiple pictures
@@ -184,16 +216,18 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 			for(let i = 0; i < urlList.length; ++i) {
 				const url = urlList[i];
 				const ext = extList[i];
-				const request = GM_download({
+				const request = downloadAsPromise({
 					url: url,
 					name: artName + " - " + (i + 1) + "." + ext,
-					saveAs: false,
-					ontimeout: () => handleTimeout(),
-					onerror: error => handleError(error, ext),
+					saveAs: false
 				});
 				requestList.push(request);
 			}
-			Promise.all(requestList).then(unsetBusy);
+			Promise.all(requestList).then(response => {
+				unsetBusy();
+			}).catch(error => {
+				handleError(error, ext);
+			});
 		}
 	});
 
@@ -250,7 +284,7 @@ async function assignClick(btn, urlList, artName, errorCallback) {
   * It also means the button will take more time to appear.
   * https://www.tampermonkey.net/documentation.php#GM_xmlhttpRequest
   */
-async function detectExtension(url, errorCallback) {
+async function detectExtension(btn, url, errorCallback) {
 	// Tries to fetch the file extension from the supplied URL
 	// This is the simplest method but it does not alway work
 	const type = /\.(\w{3,4})\?|\.(\w{3,4})$/;
@@ -266,34 +300,38 @@ async function detectExtension(url, errorCallback) {
 	}
 	// If it does not work, we send a head query and infer extension from the response
 	if(GM_xmlhttpRequest) {
-		const response = await GM_xmlhttpRequest({
+		let ext = null;
+		const response = await requestAsPromise({
 			method: "head",
 			url: url
+		}).catch(error => {
+			if(error.status === 403) {
+				// TODO: add referer
+				console.error("Cannot determine extension of target: AJAX request denied by server.", error);
+			} else {
+				console.error("Cannot determine extension of target.", error);
+			}
+			admitFailure(btn, errorCallback);
 		});
 		const headers = response.responseHeaders;
 		const filename = /filename=".*?\.(\w+)"/;
 		const mimeType = /content-type: image\/(\w+)/;
-		let ext = null;
 		if(filename.test(headers)) {
 			ext = filename.exec(headers)[1];
 		} else if(mimeType.test(headers)) {
 			// Legacy handling of DeviantArt before it went full Eclipse
 			ext = mimeType.exec(headers)[1];
+		} else {
+			console.error("Cannot determine extension of target from head response.", response);
+			admitFailure(btn, errorCallback);
 		}
 		if(ext) {
 			// Finished!
 			return ext.replace("jpeg", "jpg");
 		}
-		// If we are here then nothing worked
-		if(response.status === 403) {
-			console.error("Cannot determine extension of target: AJAX request denied by server.", response);
-		} else {
-			console.error("Cannot determine extension of target.");
-		}
 	} else {
 		console.error("Cannot determine extension of target: no GM_xmlhttpRequest permission.");
 	}
-	admitFailure(btn, errorCallback);
 	return null;
 }
 
@@ -354,7 +392,7 @@ function processDeviantArt() {
 	let href = location.href;
 	let img = document.querySelector("div[data-hook=art_stage] img");
 	if(img) {
-		create();
+		afterImage(img, buildButton);
 	}
 	// DeviantArt is a SPA so we need to detect the change of image
 	const observer = new MutationObserver(changes => {
@@ -363,28 +401,27 @@ function processDeviantArt() {
 				// URL has changed
 				href = location.href;
 				// Give some time to stuff to load
-				window.setTimeout(() => {
-					const newImg = document.querySelector("div[data-hook=art_stage] img");
-					if(newImg && img !== newImg) {
-						// Image has changed (or appeared)
-						const preexistingStage = img !== null;
-						img = newImg;
-						if(preexistingStage) {
-							// Umage has been swapped with another
-							afterImage(img, refresh);
-						} else {
-							// Image is loaded after navigation from a gallery
-							afterImage(img, create);
-						}
-					} else {
-						img = null;
+				window.setTimeout(() => processArtStage(), 300);
+			}
+			if(change.addedNodes.length > 0) {
+				// There is rarely more than one added node
+				for(const node of change.addedNodes) {
+					if(node.tagName === "IMG" && node.className && node.className !== "avatar" && !node.dataset.hook) {
+						// The actual picture appeared
+						processArtStage();
+						break;
 					}
-				}, 100);
+					if(node.querySelector && node.querySelector("a[data-hook=download_button]")) {
+						// A free download button appeared
+						processArtStage();
+						break;
+					}
+				}
 			}
 		});
 	});
 	observer.observe(document.body, {childList : true, subtree: true});
-
+	
 	function afterImage(img, callback) {
 		if(img.complete) {
 			callback();
@@ -393,25 +430,20 @@ function processDeviantArt() {
 			img.addEventListener("load", callback);
 		}
 	}
-
-	async function create() {
-		const favBtn = document.querySelector("button[data-hook=fave_button]");
-		const comBtn = document.querySelector("button[data-hook=comment_button]");
-		// Comment button is preferred as model to generate the "Save as" button.
-		// Otherwise the "Save as" button might replicates the green color of the fave button.
-		const refBtn = comBtn || favBtn;
-		const refBtnCtn = getParent(refBtn, 3);
-		const savBtnCtn = refBtnCtn.cloneNode(true);
-		const savBtn = savBtnCtn.querySelector("button");
-		savBtn.id = "artname-btn";
-		savBtn.dataset.hook = "save_button";
-		savBtn.querySelector("svg path").setAttribute("d", disketPathData);
-		savBtn.querySelector("span:last-child").innerText = "Save as";
-		refBtnCtn.parentNode.appendChild(savBtnCtn);
-		await assignClick(savBtn, getArtSource(), getArtName(), createArtNameTextNode);
+	
+	function processArtStage() {
+		const newImg = document.querySelector("div[data-hook=art_stage] img");
+		if(newImg && img !== newImg) {
+			// Image has changed (or appeared)
+			const preexistingStage = img !== null;
+			img = newImg;
+			afterImage(img, buildButton);
+		} else {
+			img = null;
+		}
 	}
-
-	async function refresh() {
+	
+	async function buildButton() {
 		const nameTxt = document.getElementById("artname-txt");
 		const saveBtn = document.getElementById("artname-btn");
 		if(nameTxt) {
@@ -423,9 +455,24 @@ function processDeviantArt() {
 			removeFailure(newSaveBtn);
 			saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
 			await assignClick(newSaveBtn, getArtSource(), getArtName(), createArtNameTextNode);
+		} else {
+			const favBtn = document.querySelector("button[data-hook=fave_button]");
+			const comBtn = document.querySelector("button[data-hook=comment_button]");
+			// Comment button is preferred as model to generate the "Save as" button.
+			// Otherwise the "Save as" button might replicates the green color of the fave button.
+			const refBtn = comBtn || favBtn;
+			const refBtnCtn = getParent(refBtn, 3);
+			const savBtnCtn = refBtnCtn.cloneNode(true);
+			const savBtn = savBtnCtn.querySelector("button");
+			savBtn.id = "artname-btn";
+			savBtn.dataset.hook = "save_button";
+			savBtn.querySelector("svg path").setAttribute("d", disketPathData);
+			savBtn.querySelector("span:last-child").innerText = "Save as";
+			refBtnCtn.parentNode.appendChild(savBtnCtn);
+			await assignClick(savBtn, getArtSource(), getArtName(), createArtNameTextNode);
 		}
 	}
-
+	
 	function getArtSource() {
 		const dlBtn = document.querySelector("a[data-hook=download_button]");
 		const artImg = document.querySelector("div[data-hook=art_stage] img");
@@ -434,7 +481,7 @@ function processDeviantArt() {
 			return dlBtn.href;
 		} else if(artImg) {
 			// Attempts to extracts the original picture url from the preview's
-			return img.src.replace(/\/v1\/fill\/.*?-pre.jpg/, "");
+			return artImg.src.replace(/\/v1\/fill\/.*?-pre.jpg/, "");
 		} else {
 			return null;
 		}

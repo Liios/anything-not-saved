@@ -10,7 +10,7 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 	const extList = [];
 	for(let i = 0; i < urlList.length; ++i) {
 		const url = urlList[i];
-		const ext = await detectExtension(url, errorCallback);
+		const ext = await detectExtension(btn, url, errorCallback);
 		extList[i] = ext;
 	}
 	btn.addEventListener("click", () => {
@@ -20,13 +20,14 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 		if(urlList.length === 1) {
 			const url = urlList[0];
 			const ext = extList[0];
-			GM_download({
+			downloadAsPromise({
 				url: url,
 				name: artName + "." + ext,
-				saveAs: true,
-				onload: unsetBusy,
-				ontimeout: () => handleTimeout(),
-				onerror: error => handleError(error, ext),
+				saveAs: true
+			}).then(response => {
+				unsetBusy();
+			}).catch(error => {
+				handleError(error, ext);
 			});
 		} else {
 			// Batch downloading of multiple pictures
@@ -34,16 +35,18 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 			for(let i = 0; i < urlList.length; ++i) {
 				const url = urlList[i];
 				const ext = extList[i];
-				const request = GM_download({
+				const request = downloadAsPromise({
 					url: url,
 					name: artName + " - " + (i + 1) + "." + ext,
-					saveAs: false,
-					ontimeout: () => handleTimeout(),
-					onerror: error => handleError(error, ext),
+					saveAs: false
 				});
 				requestList.push(request);
 			}
-			Promise.all(requestList).then(unsetBusy);
+			Promise.all(requestList).then(response => {
+				unsetBusy();
+			}).catch(error => {
+				handleError(error, ext);
+			});
 		}
 	});
 
