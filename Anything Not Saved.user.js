@@ -122,6 +122,21 @@ function addCssRule(cssRule) {
 	document.getElementsByTagName("head")[0].appendChild(style);
 }
 
+/** Waits for a set amount of time. */
+function sleep(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/** Adds the required number of zeroes to keep a constant amount of digits. */
+function padWithZeroes(num, max) {
+	let strNum = num.toString();
+	const paddingLength = max.toString().length;
+	while(strNum.length < paddingLength) {
+		strNum = '0' + strNum;
+	}
+	return strNum;
+}
+
 /** Creates a generic "Save as" button (or link, if specified).
   * When clicked it will open the "Save as" dialog with the corrected filename.
   * https://www.tampermonkey.net/documentation.php#GM_download
@@ -322,7 +337,9 @@ async function detectExtension(btn, url, errorCallback) {
 /** Marks the button as failed and execute the text-only fallback. */
 function admitFailure(btn, fallback) {
 	btn.classList.add("failed");
-	fallback();
+	if(fallback) {
+		fallback();
+	}
 }
 
 /** Takes it back. */
@@ -335,7 +352,7 @@ function isFailed(btn) {
 	return btn == null || btn.classList.contains("failed");
 }
 
-/** Eka's Portal is a bit tricky and sometimes requires XMLHttpRequest, especially for text files. */
+/** Eka's Portal sometimes requires XMLHttpRequest for text files. */
 function processAryion() {
 	const gboxes = document.querySelectorAll(".g-box");
 	for(let gbox of gboxes) {
@@ -369,9 +386,7 @@ function processAryion() {
 	}
 }
 
-/** DeviantArt is horribly difficult, we need advanced magic to make things work.
-  * Even then, their server randomly denies AJAX request so the "Save as" doesn't always work.
-  */
+/** DeviantArt is horrible to deal with from this end too. */
 function processDeviantArt() {
 	let href = location.href;
 	let img = document.querySelector("div[data-hook=art_stage] img");
@@ -497,7 +512,7 @@ function processDeviantArt() {
 	}
 }
 
-/** FurAffinity is simple. */
+/** FurAffinity */
 function processFuraffinity() {
 	const actions = document.querySelector("#page-submission .actions");
 	const betaSection = document.querySelector("#submission_page .submission-sidebar");
@@ -552,7 +567,7 @@ function processFuraffinity() {
 	}
 }
 
-/** HentaiFoundry is simple. */
+/** Hentai Foundry */
 function processHentaiFoundry() {
 	const boxFooter = document.querySelector("#picBox .boxfooter");
 	if(boxFooter) {
@@ -581,7 +596,7 @@ function processHentaiFoundry() {
 	}
 }
 
-/** InkBunny is simple. */
+/** InkBunny */
 function processInkbunny() {
 	const pictop = document.querySelector("#pictop");
 	if(pictop) {
@@ -610,7 +625,7 @@ function processInkbunny() {
 	}
 }
 
-/** Weasyl is simple. */
+/** Weasyl */
 function processWeasyl() {
 	const name = parseName(document.querySelector("h1#detail-title").innerText);
 	const bar = document.querySelector("ul#detail-actions");
@@ -631,23 +646,65 @@ function processWeasyl() {
 	bar.insertBefore(li, dlbt.parentElement.nextSibling);
 }
 
-/** Newgrounds...
-  * TODO: résoudre le bordel de slideshow
-  */
+/** Newgrounds */
 function processNewgrounds() {
 	const name = parseName(document.title.substr(0, document.title.length - 14));
-	const bar = document.querySelectorAll(".pod-head")[0];
-	const artList = document.querySelectorAll(".pod-body a[data-action=view-image]");
-	const urlList = [...artList].map(a => a.href);
-	const sabt = createSaveAsElement("button", urlList, name, () => {
-		console.warn("Unable to create Save As button.");
-	});
-	const icon = disketSvg();
-	icon.style = "vertical-align: middle; margin: -2px 4px 0 0;";
-	sabt.insertBefore(icon, sabt.firstChild);
-	const span = document.createElement("span");
-	span.appendChild(sabt);
-	bar.appendChild(span);
+	const nav = document.querySelector("#gallery-nav");
+	let urlList = [];
+	if (nav) {
+		// fuck it...
+		const dlbt = document.createElement("button");
+		dlbt.type = "button";
+		dlbt.id = "artname-btn";
+		dlbt.innerText = "Download all";
+		dlbt.onclick = () => downloadSlideshow(nav, dlbt);
+		addButton(dlbt);
+	} else {
+		const artList = document.querySelectorAll(".pod-body a[data-action=view-image]");
+		urlList = [...artList].map(a => a.href);
+		const sabt = createSaveAsElement("button", urlList, name, () => {
+			console.warn("Unable to create Save As button.");
+		});
+		addButton(sabt);
+	}
+	
+	async function downloadSlideshow(nav, dlbt) {
+		dlbt.disabled = true;
+		dlbt.style.cursor = "wait";
+		const thumbs = [...nav.querySelectorAll("a.art-gallery-thumb")];
+		const total = thumbs.length;
+		dlbt.innerText = "Download (0/" + total + ")";
+		let url = null;
+		for (let i = 0; i < total; ++i) {
+			const thumb = thumbs[i];
+			thumb.click();
+			let nextUrl = null;
+			do {
+				await sleep(200);
+				nextUrl = document.querySelector(".pod-body a[data-action=view-image]").href;
+			} while(url === nextUrl);
+			url = nextUrl;
+			const ext = await detectExtension(dlbt, url);
+			await GM.download({
+				url: url,
+				name: name + " - " + padWithZeroes(i + 1, total) + "." + ext,
+				saveAs: false
+			});
+			dlbt.innerText = "Download (" + (i + 1) + "/" + total + ")";
+		}
+		dlbt.disabled = false;
+		dlbt.style.cursor = "";
+	}
+	
+	function addButton(bt) {
+		const icon = disketSvg();
+		icon.style = "vertical-align: middle; margin: -2px 4px 0 0;";
+		bt.insertBefore(icon, bt.firstChild);
+		const span = document.createElement("span");
+		span.appendChild(bt);
+		const bar = document.querySelectorAll(".pod-head")[0];
+		bar.appendChild(span);
+	}
 }
 
 window.addEventListener("load", function() {
