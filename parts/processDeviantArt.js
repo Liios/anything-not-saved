@@ -2,7 +2,7 @@ function processDeviantArt() {
 	let href = location.href;
 	let img = document.querySelector("div[data-hook=art_stage] img");
 	if(img) {
-		create();
+		afterImage(img, buildButton);
 	}
 	// DeviantArt is a SPA so we need to detect the change of image
 	const observer = new MutationObserver(changes => {
@@ -11,28 +11,27 @@ function processDeviantArt() {
 				// URL has changed
 				href = location.href;
 				// Give some time to stuff to load
-				window.setTimeout(() => {
-					const newImg = document.querySelector("div[data-hook=art_stage] img");
-					if(newImg && img !== newImg) {
-						// Image has changed (or appeared)
-						const preexistingStage = img !== null;
-						img = newImg;
-						if(preexistingStage) {
-							// Umage has been swapped with another
-							afterImage(img, refresh);
-						} else {
-							// Image is loaded after navigation from a gallery
-							afterImage(img, create);
-						}
-					} else {
-						img = null;
+				window.setTimeout(() => processArtStage(), 300);
+			}
+			if(change.addedNodes.length > 0) {
+				// There is rarely more than one added node
+				for(const node of change.addedNodes) {
+					if(node.tagName === "IMG" && node.className && node.className !== "avatar" && !node.dataset.hook) {
+						// The actual picture appeared
+						processArtStage();
+						break;
 					}
-				}, 100);
+					if(node.querySelector && node.querySelector("a[data-hook=download_button]")) {
+						// A free download button appeared
+						processArtStage();
+						break;
+					}
+				}
 			}
 		});
 	});
 	observer.observe(document.body, {childList : true, subtree: true});
-
+	
 	function afterImage(img, callback) {
 		if(img.complete) {
 			callback();
@@ -41,25 +40,20 @@ function processDeviantArt() {
 			img.addEventListener("load", callback);
 		}
 	}
-
-	async function create() {
-		const favBtn = document.querySelector("button[data-hook=fave_button]");
-		const comBtn = document.querySelector("button[data-hook=comment_button]");
-		// Comment button is preferred as model to generate the "Save as" button.
-		// Otherwise the "Save as" button might replicates the green color of the fave button.
-		const refBtn = comBtn || favBtn;
-		const refBtnCtn = getParent(refBtn, 3);
-		const savBtnCtn = refBtnCtn.cloneNode(true);
-		const savBtn = savBtnCtn.querySelector("button");
-		savBtn.id = "artname-btn";
-		savBtn.dataset.hook = "save_button";
-		savBtn.querySelector("svg path").setAttribute("d", disketPathData);
-		savBtn.querySelector("span:last-child").innerText = "Save as";
-		refBtnCtn.parentNode.appendChild(savBtnCtn);
-		await assignClick(savBtn, getArtSource(), getArtName(), createArtNameTextNode);
+	
+	function processArtStage() {
+		const newImg = document.querySelector("div[data-hook=art_stage] img");
+		if(newImg && img !== newImg) {
+			// Image has changed (or appeared)
+			const preexistingStage = img !== null;
+			img = newImg;
+			afterImage(img, buildButton);
+		} else {
+			img = null;
+		}
 	}
-
-	async function refresh() {
+	
+	async function buildButton() {
 		const nameTxt = document.getElementById("artname-txt");
 		const saveBtn = document.getElementById("artname-btn");
 		if(nameTxt) {
@@ -71,9 +65,24 @@ function processDeviantArt() {
 			removeFailure(newSaveBtn);
 			saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
 			await assignClick(newSaveBtn, getArtSource(), getArtName(), createArtNameTextNode);
+		} else {
+			const favBtn = document.querySelector("button[data-hook=fave_button]");
+			const comBtn = document.querySelector("button[data-hook=comment_button]");
+			// Comment button is preferred as model to generate the "Save as" button.
+			// Otherwise the "Save as" button might replicates the green color of the fave button.
+			const refBtn = comBtn || favBtn;
+			const refBtnCtn = getParent(refBtn, 3);
+			const savBtnCtn = refBtnCtn.cloneNode(true);
+			const savBtn = savBtnCtn.querySelector("button");
+			savBtn.id = "artname-btn";
+			savBtn.dataset.hook = "save_button";
+			savBtn.querySelector("svg path").setAttribute("d", disketPathData);
+			savBtn.querySelector("span:last-child").innerText = "Save as";
+			refBtnCtn.parentNode.appendChild(savBtnCtn);
+			await assignClick(savBtn, getArtSource(), getArtName(), createArtNameTextNode);
 		}
 	}
-
+	
 	function getArtSource() {
 		const dlBtn = document.querySelector("a[data-hook=download_button]");
 		const artImg = document.querySelector("div[data-hook=art_stage] img");
@@ -82,7 +91,7 @@ function processDeviantArt() {
 			return dlBtn.href;
 		} else if(artImg) {
 			// Attempts to extracts the original picture url from the preview's
-			return img.src.replace(/\/v1\/fill\/.*?-pre.jpg/, "");
+			return artImg.src.replace(/\/v1\/fill\/.*?-pre.jpg/, "");
 		} else {
 			return null;
 		}
