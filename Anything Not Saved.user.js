@@ -22,7 +22,7 @@
 // @downloadURL	https://openuserjs.org/install/Sauvegarde/Anything_Not_Saved.user.js
 // @supportURL	https://openuserjs.org/scripts/Sauvegarde/Anything_Not_Saved/issues
 // @copyright	2024, Sauvegarde (https://openuserjs.org/users/Sauvegarde)
-// @license		GPL-3.0
+// @license		GPL-3.0-or-later
 // ==/UserScript==
 
 /* `Anything Not Saved` will attempt to create a "Save as" button near artworks in compatible websites.
@@ -43,7 +43,7 @@
  * This script is developed and tested with the plugin TamperMonkey on Firefox.
  */
 
-/* jshint esversion: 6 */
+/* jshint esversion: 8 */
 
 /** For testing purpose. */
 const forceFailure = false;
