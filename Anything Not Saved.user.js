@@ -16,7 +16,6 @@
 // @match		https://twitter.com/*
 // @match		https://x.com/*
 // @connect	 	wixmp.com
-// @connect		pbs.twimg.com
 // @run-at		document-start
 // @grant		GM_xmlhttpRequest
 // @grant		GM_download
@@ -728,22 +727,39 @@ function processTwitter() {
 		switch (node.tagName) {
 			case "IMG":
 				if (node.alt === "Image") {
-					const parentTweet = node.closest("a");
-					if (parentTweet) {
-						processTweet(parentTweet, node);
+					const parentAnchor = node.closest("a");
+					if (parentAnchor) {
+						processTweet(parentAnchor, node);
 					}
+				}
+				break;
+			case "DIV":
+				if (node.querySelector("video")) {
+					const anchor = findTweetAnchor(node);
+					const srcElem = node.querySelector("video");
+					processTweet(anchor, srcElem);
 				}
 				break;
 		}
 	}
 
-	function processTweet(anchor, thumb) {
+	function processTweet(anchor, srcElem) {
 		const name = parseName(anchor.href);
-		const url = parseUrl(thumb.src);
+		const url = parseUrl(srcElem.src);
 		const sabt = createSaveAsElement("button", url, name, () => {
 			console.warn("Unable to create Save As button.");
 		});
 		addButton(sabt, anchor);
+	}
+
+	function findTweetAnchor(node) {
+		const article = node.closest("article");
+		const anchors = article.querySelectorAll("a");
+		for (const anchor of anchors) {
+			if (/\/status\/\d+/.test(anchor.href)) {
+				return anchor;
+			}
+		}
 	}
 
 	function parseName(href) {
@@ -763,6 +779,8 @@ function processTwitter() {
 		const article = anchor.closest("article");
 		const share = article.querySelector("[aria-label='Share post']");
 		const bar = share.closest("[role=group]");
+		btn.style.maxHeight = "30px";
+		btn.style.margin = "auto 10px";
 		bar.appendChild(btn);
 	}
 }
