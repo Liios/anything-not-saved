@@ -1,7 +1,7 @@
 async function detectExtension(btn, url, errorCallback) {
 	// Tries to fetch the file extension from the supplied URL
 	// This is the simplest method but it does not alway work
-	const type = /\.(\w{3,4})\?|\.(\w{3,4})$/;
+	const type = /\.(\w{3,4})\?|\.(\w{3,4})$|format=(\w{3,4})$/;
 	if(type.test(url)) {
 		// For some reason, there is sometimes 'undefined' in matched groups...
 		const ext = type.exec(url).filter(el => el !== undefined)[1];

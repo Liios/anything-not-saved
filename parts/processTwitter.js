@@ -1,23 +1,56 @@
 function processTwitter() {
-	const tweets = document.querySelectorAll("article");
-	for (let tweet of tweets) {
-		const href = [...tweet.querySelectorAll("[data-testid=User-Name] a")].at(-1).href;
+	const observer = new MutationObserver(changes => {
+		changes.forEach(change => {
+			if (change.addedNodes.length > 0) {
+				for (const node of change.addedNodes) {
+					processNode(node);
+				}
+			}
+		});
+	});
+	observer.observe(document.body, {childList : true, subtree: true});
+
+	function processNode(node) {
+		switch (node.tagName) {
+			case "IMG":
+				if (node.alt === "Image") {
+					const parentTweet = node.closest("a");
+					if (parentTweet) {
+						processTweet(parentTweet, node);
+					}
+				}
+				break;
+		}
+	}
+
+	function processTweet(anchor, thumb) {
+		const name = parseName(anchor.href);
+		const url = parseUrl(thumb.src);
+		const sabt = createSaveAsElement("button", url, name, () => {
+			console.warn("Unable to create Save As button.");
+		});
+		addButton(sabt, anchor);
+	}
+
+	function parseName(href) {
+		// https://twitter.com/{user}/status/{mark}
 		const elem = href.split("/");
 		const user = elem[3];
 		const mark = elem[5];
-		const name = user + " - " + mark;
-		const video = tweet.querySelector("video");
-		if (video) {
-			const sabt = createSaveAsElement("button", video.src, name, () => {
-				console.warn("Unable to create Save As button.");
-			});
-			addButton(sabt, tweet);
-		}
+		return user + " - " + mark;
 	}
-	
-	function addButton(btn, tweet) {
-		const share = tweet.querySelector("[aria-label='Share post']");
-		const bar = getParent(share, 3);
+
+	function parseUrl(src) {
+		// https://pbs.twimg.com/media/{internal-id}?format=png&name=small
+		return src.replace(/&name=.*/, "");
+	}
+
+	function addButton(btn, anchor) {
+		const article = anchor.closest("article");
+		const share = article.querySelector("[aria-label='Share post']");
+		const bar = share.closest("[role=group]");
+		btn.style.maxHeight = "30px";
+		btn.style.margin = "auto 10px";
 		bar.appendChild(btn);
 	}
 }
