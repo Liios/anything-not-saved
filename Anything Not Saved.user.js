@@ -365,6 +365,8 @@ function admitFailure(btn, fallback) {
 /** Takes it back. */
 function removeFailure(btn) {
 	btn.classList.remove("failed");
+	// Removes the "under construction" status
+	btn.style.opacity = "";
 }
 
 /** Indicates the button won't work. */
@@ -378,8 +380,9 @@ function isFailed(btn) {
 async function getMediaUrlFromTweetId(id) {
 	const apiEndpoint = "https://twitter-video-download.com/fr/tweet/";
 	const payload = {
-		"url": `${apiEndpoint}${id}`,
-		"headers": {
+		method: "get",
+		url: `${apiEndpoint}${id}`,
+		headers: {
 			"accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
 			"accept-language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
 			"cache-control": "max-age=0",
@@ -392,14 +395,16 @@ async function getMediaUrlFromTweetId(id) {
 			"sec-fetch-user": "?1",
 			"upgrade-insecure-requests": "1"
 		  },
-		"referrer": "https://twitter-video-download.com/fr",
-		"referrerPolicy": "strict-origin-when-cross-origin",
-		"body": null,
-		"method": "GET",
-		"mode": "cors",
-		"credentials": "omit"
+		referrer: "https://twitter-video-download.com/fr",
+		referrerPolicy: "strict-origin-when-cross-origin",
+		mode: "cors",
+		credentials: "omit"
 	};
 	const request = await GM.xmlHttpRequest(payload);
+	if (request.status === 404) {
+		console.error("Video not found.");
+		return null;
+	}
 	const regex = /https:\/\/[a-zA-Z0-9_-]+\.twimg\.com\/[a-zA-Z0-9_\-./]+\.mp4/g;
 	const text = request.responseText;
 	const links = text.match(regex);
@@ -806,9 +811,10 @@ function processTwitter() {
 	observer.observe(document.body, {childList : true, subtree: true});
 
 	function processNode(node) {
+		const testAnchor = anchor => /\/status\/\d+/.test(anchor.href);
 		switch (node.tagName) {
 			case "IMG":
-				if (node.alt === "Image") {
+				if (node.src.startsWith("https://pbs.twimg.com/media/")) {
 					const parentAnchor = node.closest("a");
 					if (parentAnchor) {
 						processTweet(parentAnchor, node);
@@ -817,9 +823,14 @@ function processTwitter() {
 				break;
 			case "DIV":
 				if (node.querySelector("video")) {
-					const anchor = findTweetAnchor(node);
-					const srcElem = node.querySelector("video");
-					processTweet(anchor, srcElem);
+					const article = node.closest("article");
+					const anchors = article.querySelectorAll("a");
+					for (const anchor of anchors) {
+						if (testAnchor(anchor)) {
+							processTweet(anchor, node.querySelector("video"));
+							break;
+						}
+					}
 				}
 				break;
 		}
@@ -846,6 +857,10 @@ function processTwitter() {
 		let preBtn = article.querySelector("#artname-btn");
 		if (preBtn) {
 			const urlArray = nameUrlRelation.get(name);
+			if (urlArray === undefined) {
+				// miniature of a quote tweet, skip
+				return;
+			}
 			urlArray.push(url);
 			// Reassign with new set of URL
 			preBtn = cloneButton(preBtn);
@@ -857,16 +872,6 @@ function processTwitter() {
 			});
 			addButton(saBtn, article);
 			nameUrlRelation.set(name, [url]);
-		}
-	}
-
-	function findTweetAnchor(node) {
-		const article = node.closest("article");
-		const anchors = article.querySelectorAll("a");
-		for (const anchor of anchors) {
-			if (/\/status\/\d+/.test(anchor.href)) {
-				return anchor;
-			}
 		}
 	}
 

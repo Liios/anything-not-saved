@@ -12,9 +12,10 @@ function processTwitter() {
 	observer.observe(document.body, {childList : true, subtree: true});
 
 	function processNode(node) {
+		const testAnchor = anchor => /\/status\/\d+/.test(anchor.href);
 		switch (node.tagName) {
 			case "IMG":
-				if (node.alt === "Image") {
+				if (node.src.startsWith("https://pbs.twimg.com/media/")) {
 					const parentAnchor = node.closest("a");
 					if (parentAnchor) {
 						processTweet(parentAnchor, node);
@@ -23,9 +24,14 @@ function processTwitter() {
 				break;
 			case "DIV":
 				if (node.querySelector("video")) {
-					const anchor = findTweetAnchor(node);
-					const srcElem = node.querySelector("video");
-					processTweet(anchor, srcElem);
+					const article = node.closest("article");
+					const anchors = article.querySelectorAll("a");
+					for (const anchor of anchors) {
+						if (testAnchor(anchor)) {
+							processTweet(anchor, node.querySelector("video"));
+							break;
+						}
+					}
 				}
 				break;
 		}
@@ -52,6 +58,10 @@ function processTwitter() {
 		let preBtn = article.querySelector("#artname-btn");
 		if (preBtn) {
 			const urlArray = nameUrlRelation.get(name);
+			if (urlArray === undefined) {
+				// miniature of a quote tweet, skip
+				return;
+			}
 			urlArray.push(url);
 			// Reassign with new set of URL
 			preBtn = cloneButton(preBtn);
@@ -63,16 +73,6 @@ function processTwitter() {
 			});
 			addButton(saBtn, article);
 			nameUrlRelation.set(name, [url]);
-		}
-	}
-
-	function findTweetAnchor(node) {
-		const article = node.closest("article");
-		const anchors = article.querySelectorAll("a");
-		for (const anchor of anchors) {
-			if (/\/status\/\d+/.test(anchor.href)) {
-				return anchor;
-			}
 		}
 	}
 
