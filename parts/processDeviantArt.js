@@ -55,15 +55,13 @@ function processDeviantArt() {
 	
 	async function buildButton() {
 		const nameTxt = document.getElementById("artname-txt");
-		const saveBtn = document.getElementById("artname-btn");
 		if(nameTxt) {
 			nameTxt.parentNode.removeChild(nameTxt);
 		}
-		if(saveBtn) {
+		const preBtn = document.getElementById("artname-btn");
+		if(preBtn) {
 			// Clones the button to remove all previous event listeners
-			const newSaveBtn = saveBtn.cloneNode(true);
-			removeFailure(newSaveBtn);
-			saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+			const newSaveBtn = cloneButton(preBtn);
 			await assignClick(newSaveBtn, getArtSource(), getArtName(), createArtNameTextNode);
 		} else {
 			const favBtn = document.querySelector("button[data-hook=fave_button]");

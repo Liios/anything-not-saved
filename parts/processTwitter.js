@@ -1,4 +1,5 @@
 function processTwitter() {
+	const nameUrlRelation = new Map();
 	const observer = new MutationObserver(changes => {
 		changes.forEach(change => {
 			if (change.addedNodes.length > 0) {
@@ -33,10 +34,22 @@ function processTwitter() {
 	function processTweet(anchor, srcElem) {
 		const name = parseName(anchor.href);
 		const url = parseUrl(srcElem.src);
-		const sabt = createSaveAsElement("button", url, name, () => {
-			console.warn("Unable to create Save As button.");
-		});
-		addButton(sabt, anchor);
+		const article = anchor.closest("article");
+		let preBtn = article.querySelector("#artname-btn");
+		if (preBtn) {
+			const urlArray = nameUrlRelation.get(name);
+			urlArray.push(url);
+			// Reassign with new set of URL
+			preBtn = cloneButton(preBtn);
+			assignClick(preBtn, urlArray, name);
+			preBtn.innerText = "Download all";
+		} else {
+			const saBtn = createSaveAsElement("button", url, name, () => {
+				console.warn("Unable to create Save As button.");
+			});
+			addButton(saBtn, article);
+			nameUrlRelation.set(name, [url]);
+		}
 	}
 
 	function findTweetAnchor(node) {
@@ -59,11 +72,10 @@ function processTwitter() {
 
 	function parseUrl(src) {
 		// https://pbs.twimg.com/media/{internal-id}?format=png&name=small
-		return src.replace(/&name=.*/, "");
+		return src.replace(/&name=\w+/, "&name=large");
 	}
 
-	function addButton(btn, anchor) {
-		const article = anchor.closest("article");
+	function addButton(btn, article) {
 		const share = article.querySelector("[aria-label='Share post']");
 		const bar = share.closest("[role=group]");
 		btn.style.maxHeight = "30px";

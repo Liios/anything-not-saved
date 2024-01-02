@@ -139,6 +139,14 @@ function padWithZeroes(num, max) {
 	return strNum;
 }
 
+/** Clones and replace the button to remove all previous event listeners. */
+function cloneButton(saveBtn) {
+	const newSaveBtn = saveBtn.cloneNode(true);
+	removeFailure(newSaveBtn);
+	saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+	return newSaveBtn;
+}
+
 /** Creates a generic "Save as" button (or link, if specified).
   * When clicked it will open the "Save as" dialog with the corrected filename.
   * https://www.tampermonkey.net/documentation.php#GM_download
@@ -284,7 +292,7 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 async function detectExtension(btn, url, errorCallback) {
 	// Tries to fetch the file extension from the supplied URL
 	// This is the simplest method but it does not alway work
-	const type = /\.(\w{3,4})\?|\.(\w{3,4})$|format=(\w{3,4})$/;
+	const type = /\.(\w{3,4})\?|\.(\w{3,4})$|format=(\w{3,4})/;
 	if(type.test(url)) {
 		// For some reason, there is sometimes 'undefined' in matched groups...
 		const ext = type.exec(url).filter(el => el !== undefined)[1];
@@ -447,15 +455,13 @@ function processDeviantArt() {
 	
 	async function buildButton() {
 		const nameTxt = document.getElementById("artname-txt");
-		const saveBtn = document.getElementById("artname-btn");
 		if(nameTxt) {
 			nameTxt.parentNode.removeChild(nameTxt);
 		}
-		if(saveBtn) {
+		const preBtn = document.getElementById("artname-btn");
+		if(preBtn) {
 			// Clones the button to remove all previous event listeners
-			const newSaveBtn = saveBtn.cloneNode(true);
-			removeFailure(newSaveBtn);
-			saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+			const newSaveBtn = cloneButton(preBtn);
 			await assignClick(newSaveBtn, getArtSource(), getArtName(), createArtNameTextNode);
 		} else {
 			const favBtn = document.querySelector("button[data-hook=fave_button]");
@@ -712,6 +718,7 @@ function processNewgrounds() {
 
 /** X/Twitter */
 function processTwitter() {
+	const nameUrlRelation = new Map();
 	const observer = new MutationObserver(changes => {
 		changes.forEach(change => {
 			if (change.addedNodes.length > 0) {
@@ -746,12 +753,24 @@ function processTwitter() {
 	function processTweet(anchor, srcElem) {
 		const name = parseName(anchor.href);
 		const url = parseUrl(srcElem.src);
-		const sabt = createSaveAsElement("button", url, name, () => {
-			console.warn("Unable to create Save As button.");
-		});
-		addButton(sabt, anchor);
+		const article = anchor.closest("article");
+		let preBtn = article.querySelector("#artname-btn");
+		if (preBtn) {
+			const urlArray = nameUrlRelation.get(name);
+			urlArray.push(url);
+			// Reassign with new set of URL
+			preBtn = cloneButton(preBtn);
+			assignClick(preBtn, urlArray, name);
+			preBtn.innerText = "Download all";
+		} else {
+			const saBtn = createSaveAsElement("button", url, name, () => {
+				console.warn("Unable to create Save As button.");
+			});
+			addButton(saBtn, article);
+			nameUrlRelation.set(name, [url]);
+		}
 	}
-
+	
 	function findTweetAnchor(node) {
 		const article = node.closest("article");
 		const anchors = article.querySelectorAll("a");
@@ -761,7 +780,7 @@ function processTwitter() {
 			}
 		}
 	}
-
+	
 	function parseName(href) {
 		// https://twitter.com/{user}/status/{mark}
 		const elem = href.split("/");
@@ -769,14 +788,13 @@ function processTwitter() {
 		const mark = elem[5];
 		return user + " - " + mark;
 	}
-
+	
 	function parseUrl(src) {
 		// https://pbs.twimg.com/media/{internal-id}?format=png&name=small
-		return src.replace(/&name=.*/, "");
+		return src.replace(/&name=\w+/, "&name=large");
 	}
-
-	function addButton(btn, anchor) {
-		const article = anchor.closest("article");
+	
+	function addButton(btn, article) {
 		const share = article.querySelector("[aria-label='Share post']");
 		const bar = share.closest("[role=group]");
 		btn.style.maxHeight = "30px";
