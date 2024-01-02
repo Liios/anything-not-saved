@@ -72,7 +72,7 @@ function processTwitter() {
 
 	function parseUrl(src) {
 		// https://pbs.twimg.com/media/{internal-id}?format=png&name=small
-		return src.replace(/&name=\w+/, "&name=large");
+		return src.replace(/&name=\w+/, "&name=4096x4096");
 	}
 
 	function addButton(btn, article) {

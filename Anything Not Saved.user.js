@@ -770,7 +770,7 @@ function processTwitter() {
 			nameUrlRelation.set(name, [url]);
 		}
 	}
-	
+
 	function findTweetAnchor(node) {
 		const article = node.closest("article");
 		const anchors = article.querySelectorAll("a");
@@ -780,7 +780,7 @@ function processTwitter() {
 			}
 		}
 	}
-	
+
 	function parseName(href) {
 		// https://twitter.com/{user}/status/{mark}
 		const elem = href.split("/");
@@ -788,12 +788,12 @@ function processTwitter() {
 		const mark = elem[5];
 		return user + " - " + mark;
 	}
-	
+
 	function parseUrl(src) {
 		// https://pbs.twimg.com/media/{internal-id}?format=png&name=small
-		return src.replace(/&name=\w+/, "&name=large");
+		return src.replace(/&name=\w+/, "&name=4096x4096");
 	}
-	
+
 	function addButton(btn, article) {
 		const share = article.querySelector("[aria-label='Share post']");
 		const bar = share.closest("[role=group]");
