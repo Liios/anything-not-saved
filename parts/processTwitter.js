@@ -35,6 +35,20 @@ function processTwitter() {
 		const name = parseName(anchor.href);
 		const url = parseUrl(srcElem.src);
 		const article = anchor.closest("article");
+		if (url.startsWith("blob")) {
+			// Special blob button
+			const btn = document.createElement("button");
+			btn.type = "button";
+			btn.id = "artname-btn";
+			btn.innerText = "Save as";
+			btn.addEventListener("click", async () => {
+				const id = name.split(" - ")[1];
+				const url = await getMediaUrlFromTweetId(id);
+				saveAs(btn, url, "mp4", name);
+			});
+			addButton(btn, article);
+			return;
+		}
 		let preBtn = article.querySelector("#artname-btn");
 		if (preBtn) {
 			const urlArray = nameUrlRelation.get(name);
