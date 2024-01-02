@@ -1,18 +1,20 @@
 // ==UserScript==
 // @name		Anything Not Saved
 // @namespace	https://openuserjs.org/users/Sauvegarde
-// @version 	5.4
+// @version 	5.5
 // @author		Sauvegarde
 // @description	Save every picture you like in one click.
 // @match		https://aryion.com/g4/view/*
 // @match		https://*.deviantart.com/*
 // @match		https://www.furaffinity.net/view/*
 // @match		https://www.furaffinity.net/full/*
-// @match 		https://www.hentai-foundry.com/pictures/*
+// @match		https://www.hentai-foundry.com/pictures/*
 // @match		https://inkbunny.net/s/*
 // @match		https://inkbunny.net/submissionview.php?id=*
 // @match		https://www.weasyl.com/*/submissions/*
-// @match 		https://www.newgrounds.com/art/view/*/*
+// @match		https://www.newgrounds.com/art/view/*/*
+// @match		https://twitter.com/*
+// @match		https://x.com/*
 // @connect	 	wixmp.com
 // @run-at		document-start
 // @grant		GM_xmlhttpRequest
@@ -302,14 +304,14 @@ async function detectExtension(btn, url, errorCallback) {
 			onerror: error => {
 				if(error.status === 403) {
 					// TODO: add referer
-					console.error("Cannot determine extension of target: AJAX request denied by server.", error);
+					console.error("Cannot determine extension of target: head request denied.", error);
 				} else {
 					console.error("Cannot determine extension of target.", error);
 				}
 				admitFailure(btn, errorCallback);
 			},
 			ontimeout: () => {
-				console.error("Cannot determine extension of target: AJAX request timed out.");
+				console.error("Cannot determine extension of target: head request timed out.");
 				admitFailure(btn, errorCallback);
 			}
 		});
@@ -708,6 +710,31 @@ function processNewgrounds() {
 	}
 }
 
+/** X/Twitter */
+function processTwitter() {
+	const tweets = document.querySelectorAll("article");
+	for (let tweet of tweets) {
+		const href = [...tweet.querySelectorAll("[data-testid=User-Name] a")].at(-1).href;
+		const elem = href.split("/");
+		const user = elem[3];
+		const mark = elem[5];
+		const name = user + " - " + mark;
+		const video = tweet.querySelector("video");
+		if (video) {
+			const sabt = createSaveAsElement("button", video.src, name, () => {
+				console.warn("Unable to create Save As button.");
+			});
+			addButton(sabt, tweet);
+		}
+	}
+	
+	function addButton(btn, tweet) {
+		const share = tweet.querySelector("[aria-label='Share post']");
+		const bar = getParent(share, 3);
+		bar.appendChild(btn);
+	}
+}
+
 window.addEventListener("load", function() {
 	// Button becomes red if it doesn't work
 	addCssRule("#artname-btn.failed {color: red !important;}");
@@ -734,6 +761,10 @@ window.addEventListener("load", function() {
 		case "www.newgrounds.com":
 			processNewgrounds();
 			break;
+		case "twitter.com":
+		case "x.com":
+			processTwitter();
+			break;
 		default:
 			console.error("URL include / host filtering mismatch.");
 			break;
@@ -741,6 +772,7 @@ window.addEventListener("load", function() {
 });
 
 /* Changelog:
+ ** 5.5: added support for X/Twitter
  ** 5.4: handled Newgrounds slideshow, improved DA, refactored all the asynchronous sub-processes
  ** 5.3: fixed Newgrounds (+improved integration) and replaced @include with @match
  ** 5.2: fixed dumb issue ("data-hook") with DA

@@ -21,14 +21,14 @@ async function detectExtension(btn, url, errorCallback) {
 			onerror: error => {
 				if(error.status === 403) {
 					// TODO: add referer
-					console.error("Cannot determine extension of target: AJAX request denied by server.", error);
+					console.error("Cannot determine extension of target: head request denied.", error);
 				} else {
 					console.error("Cannot determine extension of target.", error);
 				}
 				admitFailure(btn, errorCallback);
 			},
 			ontimeout: () => {
-				console.error("Cannot determine extension of target: AJAX request timed out.");
+				console.error("Cannot determine extension of target: head request timed out.");
 				admitFailure(btn, errorCallback);
 			}
 		});
