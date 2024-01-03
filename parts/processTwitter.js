@@ -1,5 +1,7 @@
 function processTwitter() {
 	const nameUrlRelation = new Map();
+	// Allow for retrieving of MediaSource from blob url
+	injectGetFromObjectURL();
 	const observer = new MutationObserver(changes => {
 		changes.forEach(change => {
 			if (change.addedNodes.length > 0) {
