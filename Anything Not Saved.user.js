@@ -150,6 +150,7 @@ function cloneButton(saveBtn) {
 
 /** Creates a generic "Save as" HTML element with an id and a label. */
 function createButton(tagName, text) {
+	tagName = tagName ?? "button";
 	const btn = document.createElement(tagName);
 	if(tagName === "button") {
 		btn.type = "button";
@@ -747,10 +748,7 @@ function processNewgrounds() {
 	let urlList = [];
 	if (nav) {
 		// fuck it...
-		const dlbt = document.createElement("button");
-		dlbt.type = "button";
-		dlbt.id = "artname-btn";
-		dlbt.innerText = "Download all";
+		const dlbt = createButton("button", "Download all");
 		dlbt.onclick = () => downloadSlideshow(nav, dlbt);
 		addButton(dlbt);
 	} else {
@@ -847,10 +845,7 @@ function processTwitter() {
 		const article = anchor.closest("article");
 		if (url.startsWith("blob")) {
 			// Special blob button
-			const btn = document.createElement("button");
-			btn.type = "button";
-			btn.id = "artname-btn";
-			btn.innerText = "Save as";
+			const btn = createButton();
 			btn.addEventListener("click", async () => {
 				const id = name.split(" - ")[1];
 				const url = await getMediaUrlFromTweetId(id);

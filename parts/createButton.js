@@ -1,4 +1,5 @@
 function createButton(tagName, text) {
+	tagName = tagName ?? "button";
 	const btn = document.createElement(tagName);
 	if(tagName === "button") {
 		btn.type = "button";

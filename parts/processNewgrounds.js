@@ -4,10 +4,7 @@ function processNewgrounds() {
 	let urlList = [];
 	if (nav) {
 		// fuck it...
-		const dlbt = document.createElement("button");
-		dlbt.type = "button";
-		dlbt.id = "artname-btn";
-		dlbt.innerText = "Download all";
+		const dlbt = createButton("button", "Download all");
 		dlbt.onclick = () => downloadSlideshow(nav, dlbt);
 		addButton(dlbt);
 	} else {
