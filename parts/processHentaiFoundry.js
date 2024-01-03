@@ -6,7 +6,7 @@ function processHentaiFoundry() {
 		const yt1 = boxFooter.querySelector("yt1"); // favorite picture
 		const img = document.querySelector(".boxbody img.center");
 		const url = img.onclick ? "https:" + /src='(.*?)'/.exec(img.onclick.toString())[1] : img.src;
-		const sabt = createSaveAsElement("a", url, name, () => {
+		const sabt = createAndAssign("a", url, name, () => {
 			// Replace the picture title with the formatted name
 			const boxTitle = document.querySelector("#descriptionBox .boxheader .boxtitle");
 			boxTitle.innerHTML = name;

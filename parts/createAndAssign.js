@@ -1,10 +1,5 @@
-function createSaveAsElement(tagName, urlList, artName, errorCallback) {
-	const btn = document.createElement(tagName);
-	if(tagName === "button") {
-		btn.type = "button";
-	}
-	btn.id = "artname-btn";
-	btn.innerText = "Save as";
+function createAndAssign(tagName, urlList, artName, errorCallback) {
+	const btn = createButton(tagName);
 	if (!urlList || !GM.download || forceFailure) {
 		admitFailure(btn, errorCallback);
 		return btn;

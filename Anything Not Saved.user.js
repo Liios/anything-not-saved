@@ -148,17 +148,22 @@ function cloneButton(saveBtn) {
 	return newSaveBtn;
 }
 
-/** Creates a generic "Save as" button (or link, if specified).
-  * When clicked it will open the "Save as" dialog with the corrected filename.
-  * https://www.tampermonkey.net/documentation.php#GM_download
-  */
-function createSaveAsElement(tagName, urlList, artName, errorCallback) {
+/** Creates a generic "Save as" HTML element with an id and a label. */
+function createButton(tagName, text) {
 	const btn = document.createElement(tagName);
 	if(tagName === "button") {
 		btn.type = "button";
 	}
 	btn.id = "artname-btn";
-	btn.innerText = "Save as";
+	btn.innerText = text ?? "Save as";
+	return btn;
+}
+
+/** Create a button which opens the "Save as" dialog with the corrected filename.
+  * https://www.tampermonkey.net/documentation.php#GM_download
+  */
+function createAndAssign(tagName, urlList, artName, errorCallback) {
+	const btn = createButton(tagName);
 	if (!urlList || !GM.download || forceFailure) {
 		admitFailure(btn, errorCallback);
 		return btn;
@@ -460,7 +465,7 @@ function processAryion() {
 				const downloadAnchor = document.querySelectorAll(".func-box .g-box-header.g-corner-all a")[1];
 				url = downloadAnchor.href;
 			}
-			const sabt = createSaveAsElement("a", url, name, () => {
+			const sabt = createAndAssign("a", url, name, () => {
 				// Adds the formatted name under the regular title
 				const title = document.createElement("div");
 				title.innerHTML = name;
@@ -614,7 +619,7 @@ function processFuraffinity() {
 				dlbt.title = name;
 				dlbt.innerHTML = name;
 				selectText(dlbt);
-				const sabt = createSaveAsElement("button", dlbt.href, name, () => {});
+				const sabt = createAndAssign("button", dlbt.href, name, () => {});
 				dlbt.parentElement.parentElement.appendChild(sabt);
 				break;
 			}
@@ -624,7 +629,7 @@ function processFuraffinity() {
 		const name = parseName(document.title.substr(0, document.title.length - 26));
 		const side = betaSection.querySelector("section.buttons");
 		const sideDownloadLink = side.querySelector("div.download a");
-		const sideSaveAsLink = createSaveAsElement("a", sideDownloadLink.href, name, () => {
+		const sideSaveAsLink = createAndAssign("a", sideDownloadLink.href, name, () => {
 			// Adds the formatted name as a new meta info
 			const nctn = document.createElement("div");
 			const ntag = document.createElement("strong");
@@ -649,7 +654,7 @@ function processFuraffinity() {
 		// Insert a second button into picture bottom bar
 		const bottom = document.querySelector(".favorite-nav");
 		const bottomDownloadLink = Array.from(bottom.children).find(a => a.innerHTML === "Download");
-		const bottomSaveAsLink = createSaveAsElement("a", sideDownloadLink.href, name, () => {});
+		const bottomSaveAsLink = createAndAssign("a", sideDownloadLink.href, name, () => {});
 		bottomSaveAsLink.className += (" " + bottomDownloadLink.className);
 		bottomSaveAsLink.style.marginLeft = "4px"; // simulates a fucking blank space
 		bottomDownloadLink.insertAdjacentElement("afterend", bottomSaveAsLink);
@@ -665,7 +670,7 @@ function processHentaiFoundry() {
 		const yt1 = boxFooter.querySelector("yt1"); // favorite picture
 		const img = document.querySelector(".boxbody img.center");
 		const url = img.onclick ? "https:" + /src='(.*?)'/.exec(img.onclick.toString())[1] : img.src;
-		const sabt = createSaveAsElement("a", url, name, () => {
+		const sabt = createAndAssign("a", url, name, () => {
 			// Replace the picture title with the formatted name
 			const boxTitle = document.querySelector("#descriptionBox .boxheader .boxtitle");
 			boxTitle.innerHTML = name;
@@ -700,7 +705,7 @@ function processInkbunny() {
 			const picLink = img.parentElement;
 			url = picLink.href;
 		}
-		const sabt = createSaveAsElement("a", url, name, () => {
+		const sabt = createAndAssign("a", url, name, () => {
 			// Replace the picture title with the formatted name
 			const h1 = pictop.querySelector("h1");
 			h1.innerHTML = name;
@@ -719,7 +724,7 @@ function processWeasyl() {
 	const name = parseName(document.querySelector("h1#detail-title").innerText);
 	const bar = document.querySelector("ul#detail-actions");
 	const dlbt = bar.querySelector("li a[download]");
-	const sabt = createSaveAsElement("a", dlbt.href, name, () => {
+	const sabt = createAndAssign("a", dlbt.href, name, () => {
 		// Adds the formatted name under the action bar, above the description
 		const nameTxt = document.createElement("div");
 		nameTxt.innerHTML = name;
@@ -751,7 +756,7 @@ function processNewgrounds() {
 	} else {
 		const artList = document.querySelectorAll(".pod-body a[data-action=view-image]");
 		urlList = [...artList].map(a => a.href);
-		const sabt = createSaveAsElement("button", urlList, name, () => {
+		const sabt = createAndAssign("button", urlList, name, () => {
 			console.warn("Unable to create Save As button.");
 		});
 		addButton(sabt);
@@ -867,7 +872,7 @@ function processTwitter() {
 			assignClick(preBtn, urlArray, name);
 			preBtn.innerText = "Download all";
 		} else {
-			const saBtn = createSaveAsElement("button", url, name, () => {
+			const saBtn = createAndAssign("button", url, name, () => {
 				console.warn("Unable to create Save As button.");
 			});
 			addButton(saBtn, article);

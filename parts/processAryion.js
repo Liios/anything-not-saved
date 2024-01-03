@@ -14,7 +14,7 @@ function processAryion() {
 				const downloadAnchor = document.querySelectorAll(".func-box .g-box-header.g-corner-all a")[1];
 				url = downloadAnchor.href;
 			}
-			const sabt = createSaveAsElement("a", url, name, () => {
+			const sabt = createAndAssign("a", url, name, () => {
 				// Adds the formatted name under the regular title
 				const title = document.createElement("div");
 				title.innerHTML = name;

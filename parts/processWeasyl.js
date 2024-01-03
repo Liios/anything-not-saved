@@ -2,7 +2,7 @@ function processWeasyl() {
 	const name = parseName(document.querySelector("h1#detail-title").innerText);
 	const bar = document.querySelector("ul#detail-actions");
 	const dlbt = bar.querySelector("li a[download]");
-	const sabt = createSaveAsElement("a", dlbt.href, name, () => {
+	const sabt = createAndAssign("a", dlbt.href, name, () => {
 		// Adds the formatted name under the action bar, above the description
 		const nameTxt = document.createElement("div");
 		nameTxt.innerHTML = name;

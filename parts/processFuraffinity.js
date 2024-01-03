@@ -10,7 +10,7 @@ function processFuraffinity() {
 				dlbt.title = name;
 				dlbt.innerHTML = name;
 				selectText(dlbt);
-				const sabt = createSaveAsElement("button", dlbt.href, name, () => {});
+				const sabt = createAndAssign("button", dlbt.href, name, () => {});
 				dlbt.parentElement.parentElement.appendChild(sabt);
 				break;
 			}
@@ -20,7 +20,7 @@ function processFuraffinity() {
 		const name = parseName(document.title.substr(0, document.title.length - 26));
 		const side = betaSection.querySelector("section.buttons");
 		const sideDownloadLink = side.querySelector("div.download a");
-		const sideSaveAsLink = createSaveAsElement("a", sideDownloadLink.href, name, () => {
+		const sideSaveAsLink = createAndAssign("a", sideDownloadLink.href, name, () => {
 			// Adds the formatted name as a new meta info
 			const nctn = document.createElement("div");
 			const ntag = document.createElement("strong");
@@ -45,7 +45,7 @@ function processFuraffinity() {
 		// Insert a second button into picture bottom bar
 		const bottom = document.querySelector(".favorite-nav");
 		const bottomDownloadLink = Array.from(bottom.children).find(a => a.innerHTML === "Download");
-		const bottomSaveAsLink = createSaveAsElement("a", sideDownloadLink.href, name, () => {});
+		const bottomSaveAsLink = createAndAssign("a", sideDownloadLink.href, name, () => {});
 		bottomSaveAsLink.className += (" " + bottomDownloadLink.className);
 		bottomSaveAsLink.style.marginLeft = "4px"; // simulates a fucking blank space
 		bottomDownloadLink.insertAdjacentElement("afterend", bottomSaveAsLink);

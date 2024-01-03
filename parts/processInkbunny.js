@@ -12,7 +12,7 @@ function processInkbunny() {
 			const picLink = img.parentElement;
 			url = picLink.href;
 		}
-		const sabt = createSaveAsElement("a", url, name, () => {
+		const sabt = createAndAssign("a", url, name, () => {
 			// Replace the picture title with the formatted name
 			const h1 = pictop.querySelector("h1");
 			h1.innerHTML = name;

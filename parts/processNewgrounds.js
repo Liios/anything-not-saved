@@ -13,7 +13,7 @@ function processNewgrounds() {
 	} else {
 		const artList = document.querySelectorAll(".pod-body a[data-action=view-image]");
 		urlList = [...artList].map(a => a.href);
-		const sabt = createSaveAsElement("button", urlList, name, () => {
+		const sabt = createAndAssign("button", urlList, name, () => {
 			console.warn("Unable to create Save As button.");
 		});
 		addButton(sabt);
