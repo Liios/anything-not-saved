@@ -46,7 +46,7 @@
  * This script is developed and tested with the plugin TamperMonkey on Firefox.
  */
 
-/* jshint esversion: 8 */
+/* jshint esversion: 11 */
 
 /** For testing purpose. */
 const forceFailure = false;
