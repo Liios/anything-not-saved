@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Anything Not Saved
 // @namespace	https://openuserjs.org/users/Sauvegarde
-// @version 	5.6
+// @version 	5.5
 // @author		Sauvegarde
 // @description	Save every picture you like in one click.
 // @match		https://aryion.com/g4/view/*
@@ -380,115 +380,6 @@ function isFailed(btn) {
 	return btn == null || btn.classList.contains("failed");
 }
 
-/** Fetches an exploitable URL from the tweet id.
-  * from https://github.com/realcoloride/TwitterDL/blob/main/twitterDL.user.js
-  */
-async function getMediaUrlFromTweetId(id) {
-	const apiEndpoint = "https://twitter-video-download.com/fr/tweet/";
-	const payload = {
-		method: "get",
-		url: `${apiEndpoint}${id}`,
-		headers: {
-			"accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-			"accept-language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
-			"cache-control": "max-age=0",
-			"sec-ch-ua": "\"Not/A)Brand\";v=\"99\", \"Google Chrome\";v=\"115\", \"Chromium\";v=\"115\"",
-			"sec-ch-ua-mobile": "?0",
-			"sec-ch-ua-platform": "\"Windows\"",
-			"sec-fetch-dest": "document",
-			"sec-fetch-mode": "navigate",
-			"sec-fetch-site": "same-origin",
-			"sec-fetch-user": "?1",
-			"upgrade-insecure-requests": "1"
-		  },
-		referrer: "https://twitter-video-download.com/fr",
-		referrerPolicy: "strict-origin-when-cross-origin",
-		mode: "cors",
-		credentials: "omit"
-	};
-	const request = await GM.xmlHttpRequest(payload);
-	if (request.status === 404) {
-		console.error("Video not found.");
-		return null;
-	}
-	const regex = /https:\/\/[a-zA-Z0-9_-]+\.twimg\.com\/[a-zA-Z0-9_\-./]+\.mp4/g;
-	const text = request.responseText;
-	const links = text.match(regex);
-	let lq;
-	let hq;
-	// Calculate the size of a video based on resolution
-	function calculateSize(resolution) {
-		const parts = resolution.split("x");
-		const width = parseInt(parts[0]);
-		const height = parseInt(parts[1]);
-		return width * height;
-	}
-	if (!links) return null;
-	// Map links to objects with resolution and size
-	const linkObjects = links.map(link => {
-		const resolutionMatch = link.match(/\/(\d+x\d+)\//);
-		const resolution = resolutionMatch ? resolutionMatch[1] : "";
-		const size = calculateSize(resolution);
-		return { link, resolution, size };
-	});
-	// Sort linkObjects based on size in descending order
-	linkObjects.sort((a, b) => a.size - b.size);
-	// Create a Set to track seen links and store unique links
-	const uniqueLinks = new Set();
-	const deduplicatedLinks = [];
-	for (const obj of linkObjects) {
-		if (!uniqueLinks.has(obj.link)) {
-			uniqueLinks.add(obj.link);
-			deduplicatedLinks.push(obj.link);
-		}
-	}
-	lq = deduplicatedLinks[0];
-	if (deduplicatedLinks.length > 1) hq = deduplicatedLinks[deduplicatedLinks.length-1];
-	// first quality is VERY bad so if can swap to second (medium) then its better
-	if (deduplicatedLinks.length > 2) lq = deduplicatedLinks[1];
-	return hq ?? lq;
-}
-
-/** Adds an URL.getFromObjectURL(<blob:// URI>) method.
-  * It returns the original stored object (<Blob> or <MediaSource>) the URI points to or null.
-  * from: https://stackoverflow.com/a/66998406
-  * Resource to consider: https://github.com/guest271314/MediaFragmentRecorder/
-  */
-function injectGetFromObjectURL() {
-	const dict = {};
-	// Overrides URL methods to be able to retrieve the original blobs later on
-	const old_create = URL.createObjectURL;
-	const old_revoke = URL.revokeObjectURL;
-	Object.defineProperty(URL, 'createObjectURL', {
-		get: () => storeAndCreate
-	});
-	Object.defineProperty(URL, 'revokeObjectURL', {
-		get: () => forgetAndRevoke
-	});
-	Object.defineProperty(URL, 'getFromObjectURL', {
-		get: () => getBlob
-	});
-
-	function storeAndCreate(blob) {
-		const url = old_create(blob); // let it throw if it has to
-		dict[url] = blob;
-		return url
-	}
-
-	function forgetAndRevoke(url) {
-		old_revoke(url);
-		try {
-			if(new URL(url).protocol === 'blob:') {
-				delete dict[url];
-			}
-		} catch(e){}
-	}
-
-	function getBlob(url) {
-		return dict[url] || null;
-	}
-}
-
 /** Eka's Portal sometimes requires XMLHttpRequest for text files. */
 function processAryion() {
 	const gboxes = document.querySelectorAll(".g-box");
@@ -842,8 +733,6 @@ function processNewgrounds() {
 /** X/Twitter */
 function processTwitter() {
 	const nameUrlRelation = new Map();
-	// Allow for retrieving of MediaSource from blob url
-	injectGetFromObjectURL();
 	const observer = new MutationObserver(changes => {
 		changes.forEach(change => {
 			if (change.addedNodes.length > 0) {
@@ -890,15 +779,7 @@ function processTwitter() {
 			return;
 		}
 		if (url.startsWith("blob")) {
-			// Special blob button
-			const btn = createButton();
-			btn.addEventListener("click", async () => {
-				// Try to rip directly from the media source
-				//recDownload(btn, name, srcElem);
-				// Fallback solution
-				apiDownload(btn, name);
-			});
-			addButton(btn, article);
+			// Cannot process
 			return;
 		}
 		let preBtn = article.querySelector("#artname-btn");
@@ -942,43 +823,6 @@ function processTwitter() {
 		btn.style.margin = "auto 10px";
 		bar.appendChild(btn);
 	}
-
-	async function apiDownload(btn, name) {
-		const id = name.split(" - ")[1];
-		const url = await getMediaUrlFromTweetId(id);
-		if (url) {
-			saveAs(btn, url, "mp4", name);
-		} else {
-			admitFailure(btn);
-		}
-	}
-
-	async function recDownload(btn, name, video) {
-		const mediaSource = URL.getFromObjectURL(video.src);
-		// https://github.com/gildas-lormeau/SingleFile/issues/565
-		// https://developer.mozilla.org/en-US/docs/Web/API/MediaStream_Recording_API/Recording_a_media_element
-		const stream = video.captureStream?.exec() ?? video.mozCaptureStream();
-		const mediaRecorder = new MediaRecorder(stream);
-		const videoData = [];
-		mediaRecorder.ondataavailable = e => videoData.push(e.data);
-		video.pause();
-		video.currentTime = 0;
-		video.playbackRate = 60.0;
-		await video.play();
-		mediaRecorder.start();
-		video.addEventListener("ended", () => {
-			const url = URL.createObjectURL(new Blob(videoData));
-			saveAs(btn, url, "mp4", name);
-		});
-		// https://developer.mozilla.org/en-US/docs/Web/API/SourceBufferList
-		const sourceBuffers = mediaSource.sourceBuffers;
-		sourceBuffers.addEventListener("addsourcebuffer", () => {
-			const buff = sourceBuffers[0];
-			buff.addEventListener("updateend", () => {
-				// console.log(buff);
-			});
-		});
-	}
 }
 
 window.addEventListener("load", function() {
@@ -1018,7 +862,6 @@ window.addEventListener("load", function() {
 });
 
 /* Changelog:
- ** 5.6: added support for X blob video through a 3rd party API
  ** 5.5: added partial support for X/Twitter
  ** 5.4: handled Newgrounds slideshow, improved DA, refactored all the asynchronous sub-processes
  ** 5.3: fixed Newgrounds (+improved integration) and replaced @include with @match
