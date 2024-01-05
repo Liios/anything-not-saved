@@ -16,7 +16,6 @@
 // @match		https://twitter.com/*
 // @match		https://x.com/*
 // @connect	 	wixmp.com
-// @connect		twitter-video-download.com
 // @run-at		document-start
 // @grant		GM_xmlhttpRequest
 // @grant		GM_download
