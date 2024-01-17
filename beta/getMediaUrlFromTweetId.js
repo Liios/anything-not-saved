@@ -1,3 +1,6 @@
+/** Fetches an exploitable URL from the tweet id.
+  * from https://github.com/realcoloride/TwitterDL/blob/main/twitterDL.user.js
+  */
 async function getMediaUrlFromTweetId(id) {
 	const apiEndpoint = "https://twitter-video-download.com/fr/tweet/";
 	const payload = {
