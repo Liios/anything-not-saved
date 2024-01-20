@@ -748,10 +748,14 @@ function processTwitter() {
 		const testAnchor = anchor => /\/status\/\d+/.test(anchor.href);
 		switch (node.tagName) {
 			case "IMG":
-				if (node.src.startsWith("https://pbs.twimg.com/media/")) {
-					const parentAnchor = node.closest("a");
-					if (parentAnchor) {
-						processTweet(parentAnchor, node);
+				if (node.src) {
+					const isMedia = node.src.startsWith("https://pbs.twimg.com/media/");
+					const isQuote = node.src.endsWith("name=240x240") || node.src.endsWith("name=120x120");
+					if (isMedia && !isQuote) {
+						const parentAnchor = node.closest("a");
+						if (parentAnchor) {
+							processTweet(parentAnchor, node);
+						}
 					}
 				}
 				break;
