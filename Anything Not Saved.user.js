@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Anything Not Saved
 // @namespace	https://openuserjs.org/users/Sauvegarde
-// @version 	5.6
+// @version 	5.7
 // @author		Sauvegarde
 // @description	Save every picture you like in one click.
 // @match		https://aryion.com/g4/view/*
@@ -15,6 +15,7 @@
 // @match		https://www.newgrounds.com/art/view/*/*
 // @match		https://twitter.com/*
 // @match		https://x.com/*
+// @match		https://subscribestar.adult/posts/*
 // @connect	 	wixmp.com
 // @connect		twitter-video-download.com
 // @run-at		document-start
@@ -40,7 +41,7 @@
  *     Case in point: DeviantArt, which uses `wixmp.com` as a CDN.
  * * GM_download is required for "Save as" functionality.
  *     TamperMonkey uses an extension whitelist for download candidates (pictures are covered by default).
- *     You may have to extend it youself if you want to download more exotic files ("docx", "pdf", etc).
+ *     You may have to extend it yourself if you want to download more exotic files ("docx", "pdf", etc).
  *     Go to Dashboard > Parameters > Downloads and add the extensions you want in the list.
  *
  * This script is developed and tested with the plugin TamperMonkey on Firefox.
@@ -52,8 +53,9 @@
 const forceFailure = false;
 
 /** SVG path of a universally recognized save icon 💾 :p */
-const disketPathData = "M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 "
-					 + "7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zM6 6h9v4H6z";
+const disketPathData =
+	"M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 " +
+	"7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zM6 6h9v4H6z";
 
 /** SVG icon element. */
 function disketSvg() {
@@ -69,31 +71,31 @@ function disketSvg() {
 	return svg;
 }
 
-/** Generates a correct artwork name in the form of "$artist - $title".
-  * Any character forbidden by Windows are replaced or removed
-  */
+/**
+ * Generates a correct artwork name in the form of "$artist - $title".
+ * Any character forbidden by Windows are replaced or removed
+ */
 function parseName(name) {
 	const author = name.replace(/(^.*) by (.*?$)/g, "$2");
 	const picture = name.replace(/(^.*) by (.*?$)/g, "$1");
 	let title = author + " - " + picture;
-	title = title.replace(/[?.*_~=`"]/g, " ");		// forbidden characters
-	title = title.replace(/[\/\\><]/g, "-");		// slashes and stripes
-	title = title.replace(/:/g, " - ");				// colon
-	title = title.replace(/\-+\s+\-+/g, "-");		// redundant dashes
-	title = title.replace(/\s+/g, " ");				// redundant spaces
-	title = title.replace(/^\s|\s$/g, "");			// start/end spaces
-	title = title.replace(/^\-+\s+|\s+\-+$/g, "");	// start/end dashes
+	title = title.replace(/[?.*_~=`"]/g, " "); // forbidden characters
+	title = title.replace(/[\/\\><]/g, "-"); // slashes and stripes
+	title = title.replace(/:/g, " - "); // colon
+	title = title.replace(/\-+\s+\-+/g, "-"); // redundant dashes
+	title = title.replace(/\s+/g, " "); // redundant spaces
+	title = title.replace(/^\s|\s$/g, ""); // start/end spaces
+	title = title.replace(/^\-+\s+|\s+\-+$/g, ""); // start/end dashes
 	return title;
 }
 
 /** Highlights all the text in the element, ready for a ctrl+c. */
 function selectText(element) {
-	if(document.body.createTextRange) {
+	if (document.body.createTextRange) {
 		const range = document.body.createTextRange();
 		range.moveToElementText(element);
 		range.select();
-	}
-	else if(window.getSelection) {
+	} else if (window.getSelection) {
 		const selection = window.getSelection();
 		const range = document.createRange();
 		range.selectNodeContents(element);
@@ -105,16 +107,17 @@ function selectText(element) {
 /** Gets the nth parent of an element. */
 function getParent(el, nth) {
 	let parent = el;
-	for(let i = 0; i < nth; ++i) {
+	for (let i = 0; i < nth; ++i) {
 		parent = parent.parentElement;
 	}
 	return parent;
 }
 
-/** Adds a <style> tag with the rule.
-  * Necessary when dealing with pseudo-classes or anything too complicated for JS.
-  * https://stackoverflow.com/a/11371599/6355515
-  */
+/**
+ * Adds a <style> tag with the rule.
+ * Necessary when dealing with pseudo-classes or anything too complicated for JS.
+ * https://stackoverflow.com/a/11371599/6355515
+ */
 function addCssRule(cssRule) {
 	const style = document.createElement("style");
 	if (style.styleSheet) {
@@ -134,8 +137,8 @@ function sleep(ms) {
 function padWithZeroes(num, max) {
 	let strNum = num.toString();
 	const paddingLength = max.toString().length;
-	while(strNum.length < paddingLength) {
-		strNum = '0' + strNum;
+	while (strNum.length < paddingLength) {
+		strNum = "0" + strNum;
 	}
 	return strNum;
 }
@@ -152,7 +155,7 @@ function cloneButton(saveBtn) {
 function createButton(tagName, text) {
 	tagName = tagName ?? "button";
 	const btn = document.createElement(tagName);
-	if(tagName === "button") {
+	if (tagName === "button") {
 		btn.type = "button";
 	}
 	btn.id = "artname-btn";
@@ -160,16 +163,17 @@ function createButton(tagName, text) {
 	return btn;
 }
 
-/** Create a button which opens the "Save as" dialog with the corrected filename.
-  * https://www.tampermonkey.net/documentation.php#GM_download
-  */
+/**
+ * Create a button which opens the "Save as" dialog with the corrected filename.
+ * https://www.tampermonkey.net/documentation.php#GM_download
+ */
 function createAndAssign(tagName, urlList, artName, errorCallback) {
 	const btn = createButton(tagName);
 	if (!urlList || !GM.download || forceFailure) {
 		admitFailure(btn, errorCallback);
 		return btn;
 	}
-	if(typeof urlList === "string") {
+	if (typeof urlList === "string") {
 		urlList = [urlList];
 	}
 	if (urlList.length > 1) {
@@ -185,19 +189,29 @@ function createAndAssign(tagName, urlList, artName, errorCallback) {
 
 /** Assign the "Save as" event with the correct extension on button click. */
 async function assignClick(btn, urlList, artName, errorCallback) {
-	if(forceFailure) {
+	if (forceFailure) {
 		admitFailure(btn, errorCallback);
 		return;
 	}
-	if(typeof urlList === "string") {
+	if (typeof urlList === "string") {
 		urlList = [urlList];
 	}
 	// Retrieves the targets extensions
 	const extList = [];
-	for(let i = 0; i < urlList.length; ++i) {
-		const url = urlList[i];
-		const ext = await detectExtension(btn, url, errorCallback);
-		extList[i] = ext;
+	const nameWithExt = /(.+)\.(\w{3,4})$/;
+	if (nameWithExt.test(artName)) {
+		// The name provided already has the file extension
+		const twoPartsName = artName.match(nameWithExt);
+		artName = twoPartsName[1];
+		// We assume every file in the sequence will have the same extension
+		urlList.forEach(() => extList.push(twoPartsName[2]));
+	} else {
+		// The extensions must be derived from the URL
+		for (let i = 0; i < urlList.length; ++i) {
+			const url = urlList[i];
+			const ext = await detectExtension(btn, url, errorCallback);
+			extList[i] = ext;
+		}
 	}
 	btn.addEventListener("click", () => saveAs(btn, urlList, extList, artName));
 }
@@ -205,17 +219,17 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 /** Call GM.download and updates the button status on success/failure. */
 function saveAs(btn, urlList, extList, artName) {
 	let completed = 0;
-	if(typeof urlList === "string") {
+	if (typeof urlList === "string") {
 		urlList = [urlList];
 	}
-	if(typeof extList === "string") {
+	if (typeof extList === "string") {
 		extList = [extList];
 	}
 	const total = urlList.length;
 	// No rage-clicks
 	setBusy();
 	// Only one picture to be saved as
-	if(total === 1) {
+	if (total === 1) {
 		const url = urlList[0];
 		const ext = extList[0];
 		GM.download({
@@ -223,13 +237,13 @@ function saveAs(btn, urlList, extList, artName) {
 			name: artName + "." + ext,
 			saveAs: true,
 			onerror: error => handleError(error, ext),
-			ontimeout: () => handleTimeout()
+			ontimeout: () => handleTimeout(),
 		}).then(unsetBusy);
 	} else {
 		// Batch downloading of multiple pictures
 		const requestList = [];
 		btn.innerText = "Download (0/" + total + ")";
-		for(let i = 0; i < total; ++i) {
+		for (let i = 0; i < total; ++i) {
 			const url = urlList[i];
 			const ext = extList[i];
 			const request = GM.download({
@@ -238,13 +252,13 @@ function saveAs(btn, urlList, extList, artName) {
 				saveAs: false,
 				onload: response => completeOne(),
 				onerror: error => handleError(error, ext),
-				ontimeout: () => handleTimeout()
+				ontimeout: () => handleTimeout(),
 			});
 			requestList.push(request);
 		}
 		Promise.all(requestList).then(unsetBusy);
 	}
-	
+
 	function completeOne() {
 		completed++;
 		btn.innerText = "Download (" + completed + "/" + total + ")";
@@ -262,7 +276,7 @@ function saveAs(btn, urlList, extList, artName) {
 	}
 
 	function handleError(error, ext) {
-		switch(error.error) {
+		switch (error.error) {
 			case "not_enabled":
 				alert("GM_download is not enabled.");
 				break;
@@ -278,8 +292,12 @@ function saveAs(btn, urlList, extList, artName) {
 				break;
 			case "not_whitelisted":
 				// https://github.com/Tampermonkey/tampermonkey/issues/643
-				alert("The requested file extension (" + ext + ") is not whitelisted.\n\n"
-					  +"You have to add it manually (see 'Downloads' in Tampermonkey settings).");
+				alert(
+					"The requested file extension (" +
+						ext +
+						") is not whitelisted.\n\n" +
+						"You have to add it manually (see 'Downloads' in Tampermonkey settings)."
+				);
 				break;
 			case "Download canceled by the user":
 				// User just clicked "Cancel" on the prompt
@@ -291,24 +309,25 @@ function saveAs(btn, urlList, extList, artName) {
 		}
 		unsetBusy();
 	}
-	
+
 	function handleTimeout() {
 		alert("The download target has timed out :(");
 		unsetBusy();
 	}
 }
 
-/** Attempts to detect the extension of the download target from the URL.
-  * If that fails, uses a AJAX request and parses it in the response.
-  * In that case, we need a cross-scripting permission to access the CDN.
-  * It also means the button will take more time to appear.
-  * https://www.tampermonkey.net/documentation.php#GM_xmlhttpRequest
-  */
+/**
+ * Attempts to detect the extension of the download target from the URL.
+ * If that fails, uses a AJAX request and parses it in the response.
+ * In that case, we need a cross-scripting permission to access the CDN.
+ * It also means the button will take more time to appear.
+ * https://www.tampermonkey.net/documentation.php#GM_xmlhttpRequest
+ */
 async function detectExtension(btn, url, errorCallback) {
 	// Tries to fetch the file extension from the supplied URL
 	// This is the simplest method but it does not alway work
 	const type = /\.(\w{3,4})\?|\.(\w{3,4})$|format=(\w{3,4})/;
-	if(type.test(url)) {
+	if (type.test(url)) {
 		// For some reason, there is sometimes 'undefined' in matched groups...
 		const ext = type.exec(url).filter(el => el !== undefined)[1];
 		// Excludes web pages that indirectly deliver content
@@ -319,13 +338,13 @@ async function detectExtension(btn, url, errorCallback) {
 		}
 	}
 	// If it does not work, we send a head query and infer extension from the response
-	if(GM.xmlHttpRequest) {
+	if (GM.xmlHttpRequest) {
 		let ext = null;
 		const response = await GM.xmlHttpRequest({
 			method: "head",
 			url: url,
 			onerror: error => {
-				if(error.status === 403) {
+				if (error.status === 403) {
 					// TODO: add referer
 					console.error("Cannot determine extension of target: head request denied.", error);
 				} else {
@@ -336,21 +355,21 @@ async function detectExtension(btn, url, errorCallback) {
 			ontimeout: () => {
 				console.error("Cannot determine extension of target: head request timed out.");
 				admitFailure(btn, errorCallback);
-			}
+			},
 		});
 		const headers = response.responseHeaders;
 		const filename = /filename=".*?\.(\w+)"/;
 		const mimeType = /content-type: image\/(\w+)/;
-		if(filename.test(headers)) {
+		if (filename.test(headers)) {
 			ext = filename.exec(headers)[1];
-		} else if(mimeType.test(headers)) {
+		} else if (mimeType.test(headers)) {
 			// Legacy handling of DeviantArt before it went full Eclipse
 			ext = mimeType.exec(headers)[1];
 		} else {
 			console.error("Cannot determine extension of target from head response.", response);
 			admitFailure(btn, errorCallback);
 		}
-		if(ext) {
+		if (ext) {
 			// Finished!
 			return ext.replace("jpeg", "jpg");
 		}
@@ -363,7 +382,7 @@ async function detectExtension(btn, url, errorCallback) {
 /** Marks the button as failed and execute the text-only fallback. */
 function admitFailure(btn, fallback) {
 	btn.classList.add("failed");
-	if(fallback) {
+	if (fallback) {
 		fallback();
 	}
 }
@@ -382,14 +401,14 @@ function isFailed(btn) {
 
 /** Eka's Portal sometimes requires XMLHttpRequest for text files. */
 function processAryion() {
-	const gboxes = document.querySelectorAll(".g-box");
-	for(let gbox of gboxes) {
-		const bar = gbox.querySelector(".g-box-header + .g-box-header span + span");
-		if(bar) {
+	const boxes = document.querySelectorAll(".g-box");
+	for (let box of boxes) {
+		const bar = box.querySelector(".g-box-header + .g-box-header span + span");
+		if (bar) {
 			const name = parseName(document.title.substr(6, document.title.length));
 			const noscript = document.querySelector(".item-box noscript");
 			let url = null;
-			if(noscript) {
+			if (noscript) {
 				// Creates download buttons from the noscript picture URL
 				url = /src='(.*?)'/.exec(noscript.innerText)[1].replace("//", "https://");
 			} else {
@@ -418,7 +437,7 @@ function processAryion() {
 function processDeviantArt() {
 	let href = location.href;
 	let img = document.querySelector("div[data-hook=art_stage] img");
-	if(img) {
+	if (img) {
 		afterImage(img, buildButton);
 	}
 	// DeviantArt is a SPA so we need to detect the change of image
@@ -430,15 +449,15 @@ function processDeviantArt() {
 				// Give some time to stuff to load
 				window.setTimeout(() => processArtStage(), 300);
 			}
-			if(change.addedNodes.length > 0) {
+			if (change.addedNodes.length > 0) {
 				// There is rarely more than one added node
-				for(const node of change.addedNodes) {
-					if(node.tagName === "IMG" && node.className && node.className !== "avatar" && !node.dataset.hook) {
+				for (const node of change.addedNodes) {
+					if (node.tagName === "IMG" && node.className && node.className !== "avatar" && !node.dataset.hook) {
 						// The actual picture appeared
 						processArtStage();
 						break;
 					}
-					if(node.querySelector && node.querySelector("a[data-hook=download_button]")) {
+					if (node.querySelector && node.querySelector("a[data-hook=download_button]")) {
 						// A free download button appeared
 						processArtStage();
 						break;
@@ -447,20 +466,20 @@ function processDeviantArt() {
 			}
 		});
 	});
-	observer.observe(document.body, {childList : true, subtree: true});
-	
+	observer.observe(document.body, { childList: true, subtree: true });
+
 	function afterImage(img, callback) {
-		if(img.complete) {
+		if (img.complete) {
 			callback();
 		} else {
 			// Won't fire if the image is loaded from cache
 			img.addEventListener("load", callback);
 		}
 	}
-	
+
 	function processArtStage() {
 		const newImg = document.querySelector("div[data-hook=art_stage] img");
-		if(newImg && img !== newImg) {
+		if (newImg && img !== newImg) {
 			// Image has changed (or appeared)
 			const preexistingStage = img !== null;
 			img = newImg;
@@ -469,14 +488,14 @@ function processDeviantArt() {
 			img = null;
 		}
 	}
-	
+
 	async function buildButton() {
 		const nameTxt = document.getElementById("artname-txt");
-		if(nameTxt) {
+		if (nameTxt) {
 			nameTxt.parentNode.removeChild(nameTxt);
 		}
 		const preBtn = document.getElementById("artname-btn");
-		if(preBtn) {
+		if (preBtn) {
 			// Clones the button to remove all previous event listeners
 			const newSaveBtn = cloneButton(preBtn);
 			await assignClick(newSaveBtn, getArtSource(), getArtName(), createArtNameTextNode);
@@ -497,14 +516,14 @@ function processDeviantArt() {
 			await assignClick(savBtn, getArtSource(), getArtName(), createArtNameTextNode);
 		}
 	}
-	
+
 	function getArtSource() {
 		const dlBtn = document.querySelector("a[data-hook=download_button]");
 		const artImg = document.querySelector("div[data-hook=art_stage] img");
-		if(dlBtn) {
+		if (dlBtn) {
 			// The download button is only present for large pictures
 			return dlBtn.href;
-		} else if(artImg) {
+		} else if (artImg) {
 			// Attempts to extracts the original picture url from the preview's
 			return artImg.src.replace(/\/v1\/fill\/.*?-pre.jpg/, "");
 		} else {
@@ -542,11 +561,11 @@ function processDeviantArt() {
 function processFuraffinity() {
 	const actions = document.querySelector("#page-submission .actions");
 	const betaSection = document.querySelector("#submission_page .submission-sidebar");
-	if(actions) {
-		// Classic template (no longer maintened)
+	if (actions) {
+		// Classic template (no longer maintained)
 		const name = parseName(document.title.substr(0, document.title.length - 26));
-		for(let i = 0 ; i < actions.childNodes.length ; ++i) {
-			if(actions.childNodes[i].textContent.match("Download")) {
+		for (let i = 0; i < actions.childNodes.length; ++i) {
+			if (actions.childNodes[i].textContent.match("Download")) {
 				const dlbt = actions.childNodes[i].childNodes[0];
 				dlbt.title = name;
 				dlbt.innerHTML = name;
@@ -556,24 +575,24 @@ function processFuraffinity() {
 				break;
 			}
 		}
-	} else if(betaSection) {
+	} else if (betaSection) {
 		// Modern template
 		const name = parseName(document.title.substr(0, document.title.length - 26));
 		const side = betaSection.querySelector("section.buttons");
 		const sideDownloadLink = side.querySelector("div.download a");
 		const sideSaveAsLink = createAndAssign("a", sideDownloadLink.href, name, () => {
 			// Adds the formatted name as a new meta info
-			const nctn = document.createElement("div");
-			const ntag = document.createElement("strong");
-			const nval = document.createElement("span");
-			ntag.innerText = "Name";
-			nval.innerText = name;
-			nctn.appendChild(ntag);
-			nctn.appendChild(document.createTextNode(" "));
-			nctn.appendChild(nval);
+			const container = document.createElement("div");
+			const strong = document.createElement("strong");
+			const nameSpan = document.createElement("span");
+			strong.innerText = "Name";
+			nameSpan.innerText = name;
+			container.appendChild(strong);
+			container.appendChild(document.createTextNode(" "));
+			container.appendChild(nameSpan);
 			const meta = betaSection.querySelector("section.info.text");
-			meta.insertBefore(nctn, meta.firstChild);
-			selectText(nval);
+			meta.insertBefore(container, meta.firstChild);
+			selectText(nameSpan);
 		});
 		// Adjust styling and insert into sidebar
 		sideSaveAsLink.href = "#";
@@ -587,7 +606,7 @@ function processFuraffinity() {
 		const bottom = document.querySelector(".favorite-nav");
 		const bottomDownloadLink = Array.from(bottom.children).find(a => a.innerHTML === "Download");
 		const bottomSaveAsLink = createAndAssign("a", sideDownloadLink.href, name, () => {});
-		bottomSaveAsLink.className += (" " + bottomDownloadLink.className);
+		bottomSaveAsLink.className += " " + bottomDownloadLink.className;
 		bottomSaveAsLink.style.marginLeft = "4px"; // simulates a fucking blank space
 		bottomDownloadLink.insertAdjacentElement("afterend", bottomSaveAsLink);
 	}
@@ -596,7 +615,7 @@ function processFuraffinity() {
 /** Hentai Foundry */
 function processHentaiFoundry() {
 	const boxFooter = document.querySelector("#picBox .boxfooter");
-	if(boxFooter) {
+	if (boxFooter) {
 		const name = parseName(document.title.substr(0, document.title.length - 17));
 		const yt0 = boxFooter.querySelector("yt0"); // broken thumb
 		const yt1 = boxFooter.querySelector("yt1"); // favorite picture
@@ -625,7 +644,7 @@ function processHentaiFoundry() {
 /** InkBunny */
 function processInkbunny() {
 	const pictop = document.querySelector("#pictop");
-	if(pictop) {
+	if (pictop) {
 		const name = parseName(document.title.substr(0, document.title.length - 49));
 		const sctn = document.querySelector("#size_container");
 		const downloadLink = sctn.querySelector("div+a");
@@ -690,7 +709,7 @@ function processNewgrounds() {
 		});
 		addButton(sabt);
 	}
-	
+
 	async function downloadSlideshow(nav, dlbt) {
 		dlbt.disabled = true;
 		dlbt.style.cursor = "wait";
@@ -705,20 +724,20 @@ function processNewgrounds() {
 			do {
 				await sleep(200);
 				nextUrl = document.querySelector(".pod-body a[data-action=view-image]").href;
-			} while(url === nextUrl);
+			} while (url === nextUrl);
 			url = nextUrl;
 			const ext = await detectExtension(dlbt, url);
 			await GM.download({
 				url: url,
 				name: name + " - " + padWithZeroes(i + 1, total) + "." + ext,
-				saveAs: false
+				saveAs: false,
 			});
 			dlbt.innerText = "Download (" + (i + 1) + "/" + total + ")";
 		}
 		dlbt.disabled = false;
 		dlbt.style.cursor = "";
 	}
-	
+
 	function addButton(bt) {
 		const icon = disketSvg();
 		icon.style = "vertical-align: middle; margin: -2px 4px 0 0;";
@@ -742,7 +761,7 @@ function processTwitter() {
 			}
 		});
 	});
-	observer.observe(document.body, {childList : true, subtree: true});
+	observer.observe(document.body, { childList: true, subtree: true });
 
 	function processNode(node) {
 		const testAnchor = anchor => /\/status\/\d+/.test(anchor.href);
@@ -829,11 +848,36 @@ function processTwitter() {
 	}
 }
 
-window.addEventListener("load", function() {
+/** Subscribestar */
+function processSubscribestar() {
+	document.body.addEventListener("click", () => setTimeout(main, 500), true);
+	function main() {
+		const imgLinks = document.querySelectorAll("a.gallery-image_original_link");
+		if (imgLinks.length === 1) {
+			const imgLink = imgLinks[0];
+			const existing = document.getElementById("artname-btn");
+			if (!existing && GM_download) {
+				const sabt = createAndAssign("a", imgLink.href, imgLink.download);
+				sabt.className = imgLink.className;
+				sabt.style.display = "inline-block";
+				sabt.style.padding = "0 0 10px 0";
+				sabt.style.cursor = "pointer";
+				const sep = document.createElement("span");
+				sep.innerHTML = "&nbsp;|&nbsp;";
+				imgLink.style.display = "inline-block";
+				imgLink.style.padding = "10px 0 0 0";
+				imgLink.parentElement.appendChild(sep);
+				imgLink.parentElement.appendChild(sabt);
+			}
+		}
+	}
+}
+
+window.addEventListener("load", function () {
 	// Button becomes red if it doesn't work
 	addCssRule("#artname-btn.failed {color: red !important;}");
 	// URL includes filtering
-	switch(location.host) {
+	switch (location.host) {
 		case "aryion.com":
 			processAryion();
 			break;
@@ -859,6 +903,9 @@ window.addEventListener("load", function() {
 		case "x.com":
 			processTwitter();
 			break;
+		case "subscribestar.adult":
+			processSubscribestar();
+			break;
 		default:
 			console.error("URL include / host filtering mismatch.");
 			break;
@@ -866,7 +913,8 @@ window.addEventListener("load", function() {
 });
 
 /* Changelog:
- ** 5.6: fix action bar detection for X/Twitter
+ ** 5.7: added support for Subscribestar
+ ** 5.6: fixed action bar detection for X/Twitter
  ** 5.5: added partial support for X/Twitter
  ** 5.4: handled Newgrounds slideshow, improved DA, refactored all the asynchronous sub-processes
  ** 5.3: fixed Newgrounds (+improved integration) and replaced @include with @match
@@ -874,7 +922,7 @@ window.addEventListener("load", function() {
  ** 5.1.1: fixed InkBunny image catching when download link is missing
  ** 5.1
  *  added another "Save as" button at picture bottom on FA
- *  impoved integration with FA
+ *  improved integration with FA
  *  fixed DA
  *  refactored createSaveAsButton() to be clearer
  ** 5.0

@@ -1,7 +1,7 @@
 function createButton(tagName, text) {
 	tagName = tagName ?? "button";
 	const btn = document.createElement(tagName);
-	if(tagName === "button") {
+	if (tagName === "button") {
 		btn.type = "button";
 	}
 	btn.id = "artname-btn";

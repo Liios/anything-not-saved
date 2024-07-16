@@ -1,0 +1,19 @@
+# Custom Dictionary Words
+artname
+aryion
+deviantart
+disket
+dlbt
+eka
+esversion
+furaffinity
+hentai
+inkbunny
+newgrounds
+sabt
+sauvegarde
+subscribestar
+tampermonkey
+weasyl
+wixmp
+xmlhttp

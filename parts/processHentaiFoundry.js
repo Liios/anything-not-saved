@@ -1,6 +1,6 @@
 function processHentaiFoundry() {
 	const boxFooter = document.querySelector("#picBox .boxfooter");
-	if(boxFooter) {
+	if (boxFooter) {
 		const name = parseName(document.title.substr(0, document.title.length - 17));
 		const yt0 = boxFooter.querySelector("yt0"); // broken thumb
 		const yt1 = boxFooter.querySelector("yt1"); // favorite picture

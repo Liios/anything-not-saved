@@ -9,7 +9,7 @@ function processTwitter() {
 			}
 		});
 	});
-	observer.observe(document.body, {childList : true, subtree: true});
+	observer.observe(document.body, { childList: true, subtree: true });
 
 	function processNode(node) {
 		const testAnchor = anchor => /\/status\/\d+/.test(anchor.href);

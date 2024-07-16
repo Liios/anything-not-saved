@@ -1,7 +1,7 @@
 function processDeviantArt() {
 	let href = location.href;
 	let img = document.querySelector("div[data-hook=art_stage] img");
-	if(img) {
+	if (img) {
 		afterImage(img, buildButton);
 	}
 	// DeviantArt is a SPA so we need to detect the change of image
@@ -13,15 +13,15 @@ function processDeviantArt() {
 				// Give some time to stuff to load
 				window.setTimeout(() => processArtStage(), 300);
 			}
-			if(change.addedNodes.length > 0) {
+			if (change.addedNodes.length > 0) {
 				// There is rarely more than one added node
-				for(const node of change.addedNodes) {
-					if(node.tagName === "IMG" && node.className && node.className !== "avatar" && !node.dataset.hook) {
+				for (const node of change.addedNodes) {
+					if (node.tagName === "IMG" && node.className && node.className !== "avatar" && !node.dataset.hook) {
 						// The actual picture appeared
 						processArtStage();
 						break;
 					}
-					if(node.querySelector && node.querySelector("a[data-hook=download_button]")) {
+					if (node.querySelector && node.querySelector("a[data-hook=download_button]")) {
 						// A free download button appeared
 						processArtStage();
 						break;
@@ -30,20 +30,20 @@ function processDeviantArt() {
 			}
 		});
 	});
-	observer.observe(document.body, {childList : true, subtree: true});
-	
+	observer.observe(document.body, { childList: true, subtree: true });
+
 	function afterImage(img, callback) {
-		if(img.complete) {
+		if (img.complete) {
 			callback();
 		} else {
 			// Won't fire if the image is loaded from cache
 			img.addEventListener("load", callback);
 		}
 	}
-	
+
 	function processArtStage() {
 		const newImg = document.querySelector("div[data-hook=art_stage] img");
-		if(newImg && img !== newImg) {
+		if (newImg && img !== newImg) {
 			// Image has changed (or appeared)
 			const preexistingStage = img !== null;
 			img = newImg;
@@ -52,14 +52,14 @@ function processDeviantArt() {
 			img = null;
 		}
 	}
-	
+
 	async function buildButton() {
 		const nameTxt = document.getElementById("artname-txt");
-		if(nameTxt) {
+		if (nameTxt) {
 			nameTxt.parentNode.removeChild(nameTxt);
 		}
 		const preBtn = document.getElementById("artname-btn");
-		if(preBtn) {
+		if (preBtn) {
 			// Clones the button to remove all previous event listeners
 			const newSaveBtn = cloneButton(preBtn);
 			await assignClick(newSaveBtn, getArtSource(), getArtName(), createArtNameTextNode);
@@ -80,14 +80,14 @@ function processDeviantArt() {
 			await assignClick(savBtn, getArtSource(), getArtName(), createArtNameTextNode);
 		}
 	}
-	
+
 	function getArtSource() {
 		const dlBtn = document.querySelector("a[data-hook=download_button]");
 		const artImg = document.querySelector("div[data-hook=art_stage] img");
-		if(dlBtn) {
+		if (dlBtn) {
 			// The download button is only present for large pictures
 			return dlBtn.href;
-		} else if(artImg) {
+		} else if (artImg) {
 			// Attempts to extracts the original picture url from the preview's
 			return artImg.src.replace(/\/v1\/fill\/.*?-pre.jpg/, "");
 		} else {

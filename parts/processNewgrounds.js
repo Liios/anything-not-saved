@@ -15,7 +15,7 @@ function processNewgrounds() {
 		});
 		addButton(sabt);
 	}
-	
+
 	async function downloadSlideshow(nav, dlbt) {
 		dlbt.disabled = true;
 		dlbt.style.cursor = "wait";
@@ -30,20 +30,20 @@ function processNewgrounds() {
 			do {
 				await sleep(200);
 				nextUrl = document.querySelector(".pod-body a[data-action=view-image]").href;
-			} while(url === nextUrl);
+			} while (url === nextUrl);
 			url = nextUrl;
 			const ext = await detectExtension(dlbt, url);
 			await GM.download({
 				url: url,
 				name: name + " - " + padWithZeroes(i + 1, total) + "." + ext,
-				saveAs: false
+				saveAs: false,
 			});
 			dlbt.innerText = "Download (" + (i + 1) + "/" + total + ")";
 		}
 		dlbt.disabled = false;
 		dlbt.style.cursor = "";
 	}
-	
+
 	function addButton(bt) {
 		const icon = disketSvg();
 		icon.style = "vertical-align: middle; margin: -2px 4px 0 0;";

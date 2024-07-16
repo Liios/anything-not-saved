@@ -1,6 +1,6 @@
 function processInkbunny() {
 	const pictop = document.querySelector("#pictop");
-	if(pictop) {
+	if (pictop) {
 		const name = parseName(document.title.substr(0, document.title.length - 49));
 		const sctn = document.querySelector("#size_container");
 		const downloadLink = sctn.querySelector("div+a");

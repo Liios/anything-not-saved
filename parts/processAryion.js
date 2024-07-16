@@ -1,12 +1,12 @@
 function processAryion() {
-	const gboxes = document.querySelectorAll(".g-box");
-	for(let gbox of gboxes) {
-		const bar = gbox.querySelector(".g-box-header + .g-box-header span + span");
-		if(bar) {
+	const boxes = document.querySelectorAll(".g-box");
+	for (let box of boxes) {
+		const bar = box.querySelector(".g-box-header + .g-box-header span + span");
+		if (bar) {
 			const name = parseName(document.title.substr(6, document.title.length));
 			const noscript = document.querySelector(".item-box noscript");
 			let url = null;
-			if(noscript) {
+			if (noscript) {
 				// Creates download buttons from the noscript picture URL
 				url = /src='(.*?)'/.exec(noscript.innerText)[1].replace("//", "https://");
 			} else {

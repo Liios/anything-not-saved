@@ -4,7 +4,7 @@ function createAndAssign(tagName, urlList, artName, errorCallback) {
 		admitFailure(btn, errorCallback);
 		return btn;
 	}
-	if(typeof urlList === "string") {
+	if (typeof urlList === "string") {
 		urlList = [urlList];
 	}
 	if (urlList.length > 1) {

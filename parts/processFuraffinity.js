@@ -1,11 +1,11 @@
 function processFuraffinity() {
 	const actions = document.querySelector("#page-submission .actions");
 	const betaSection = document.querySelector("#submission_page .submission-sidebar");
-	if(actions) {
-		// Classic template (no longer maintened)
+	if (actions) {
+		// Classic template (no longer maintained)
 		const name = parseName(document.title.substr(0, document.title.length - 26));
-		for(let i = 0 ; i < actions.childNodes.length ; ++i) {
-			if(actions.childNodes[i].textContent.match("Download")) {
+		for (let i = 0; i < actions.childNodes.length; ++i) {
+			if (actions.childNodes[i].textContent.match("Download")) {
 				const dlbt = actions.childNodes[i].childNodes[0];
 				dlbt.title = name;
 				dlbt.innerHTML = name;
@@ -15,24 +15,24 @@ function processFuraffinity() {
 				break;
 			}
 		}
-	} else if(betaSection) {
+	} else if (betaSection) {
 		// Modern template
 		const name = parseName(document.title.substr(0, document.title.length - 26));
 		const side = betaSection.querySelector("section.buttons");
 		const sideDownloadLink = side.querySelector("div.download a");
 		const sideSaveAsLink = createAndAssign("a", sideDownloadLink.href, name, () => {
 			// Adds the formatted name as a new meta info
-			const nctn = document.createElement("div");
-			const ntag = document.createElement("strong");
-			const nval = document.createElement("span");
-			ntag.innerText = "Name";
-			nval.innerText = name;
-			nctn.appendChild(ntag);
-			nctn.appendChild(document.createTextNode(" "));
-			nctn.appendChild(nval);
+			const container = document.createElement("div");
+			const strong = document.createElement("strong");
+			const nameSpan = document.createElement("span");
+			strong.innerText = "Name";
+			nameSpan.innerText = name;
+			container.appendChild(strong);
+			container.appendChild(document.createTextNode(" "));
+			container.appendChild(nameSpan);
 			const meta = betaSection.querySelector("section.info.text");
-			meta.insertBefore(nctn, meta.firstChild);
-			selectText(nval);
+			meta.insertBefore(container, meta.firstChild);
+			selectText(nameSpan);
 		});
 		// Adjust styling and insert into sidebar
 		sideSaveAsLink.href = "#";
@@ -46,7 +46,7 @@ function processFuraffinity() {
 		const bottom = document.querySelector(".favorite-nav");
 		const bottomDownloadLink = Array.from(bottom.children).find(a => a.innerHTML === "Download");
 		const bottomSaveAsLink = createAndAssign("a", sideDownloadLink.href, name, () => {});
-		bottomSaveAsLink.className += (" " + bottomDownloadLink.className);
+		bottomSaveAsLink.className += " " + bottomDownloadLink.className;
 		bottomSaveAsLink.style.marginLeft = "4px"; // simulates a fucking blank space
 		bottomDownloadLink.insertAdjacentElement("afterend", bottomSaveAsLink);
 	}

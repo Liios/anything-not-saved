@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"cSpell.customDictionaries": {
+			"custom-dictionary-workspace": {
+				"name": "custom-dictionary-workspace",
+				"path": "${workspaceFolder:anything-not-saved}/.cspell/custom-dictionary-workspace.txt",
+				"addWords": true,
+				"scope": "workspace"
+			}
+		},
+		"notebook.codeActionsOnSave": {
+
+		},
+		"editor.codeActionsOnSave": {},
+		"prettier.printWidth": 120,
+		"prettier.useTabs": true,
+		"editor.formatOnSave": true,
+		"prettier.arrowParens": "avoid"
+	}
+}
