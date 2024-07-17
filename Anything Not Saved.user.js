@@ -14,7 +14,7 @@
 // @match		https://www.newgrounds.com/art/view/*/*
 // @match		https://twitter.com/*
 // @match		https://x.com/*
-// @match		https://subscribestar.adult/posts/*
+// @match		https://subscribestar.adult/*
 // @connect	 	wixmp.com
 // @connect		twitter-video-download.com
 // @run-at		document-start
