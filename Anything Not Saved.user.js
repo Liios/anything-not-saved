@@ -411,9 +411,14 @@ function processAryion() {
 				// Creates download buttons from the noscript picture URL
 				url = /src='(.*?)'/.exec(noscript.innerText)[1].replace("//", "https://");
 			} else {
-				// Slower, because it goes the XMLHttpRequest way to get the file extension
-				const downloadAnchor = document.querySelectorAll(".func-box .g-box-header.g-corner-all a")[1];
-				url = downloadAnchor.href;
+				// Slower, because it goes the XMLHttpRequest way to pull the file extension
+				const barLinks = document.querySelectorAll(".func-box .g-box-header.g-corner-all a");
+				for (const link of barLinks) {
+					if (link.innerText == "Download") {
+						url = link.href;
+						break;
+					}
+				}
 			}
 			const sabt = createAndAssign("a", url, name, () => {
 				// Adds the formatted name under the regular title
