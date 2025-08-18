@@ -73,20 +73,25 @@ function disketSvg() {
 
 /**
  * Generates a correct artwork name in the form of "$artist - $title".
- * Any character forbidden by Windows are replaced or removed
  */
 function parseName(name) {
 	const author = name.replace(/(^.*) by (.*?$)/g, "$2");
 	const picture = name.replace(/(^.*) by (.*?$)/g, "$1");
-	let title = author + " - " + picture;
-	title = title.replace(/[?.*_~=`"]/g, " "); // forbidden characters
-	title = title.replace(/[\/\\><]/g, "-"); // slashes and stripes
-	title = title.replace(/:/g, " - "); // colon
-	title = title.replace(/\-+\s+\-+/g, "-"); // redundant dashes
-	title = title.replace(/\s+/g, " "); // redundant spaces
-	title = title.replace(/^\s|\s$/g, ""); // start/end spaces
-	title = title.replace(/^\-+\s+|\s+\-+$/g, ""); // start/end dashes
-	return title;
+	return clean(author + " - " + picture);
+}
+
+/**
+ * Replace or remove any character forbidden by Windows.
+ */
+function clean(name) {
+	name = name.replace(/[?.*_~=`"]/g, " "); // forbidden characters
+	name = name.replace(/[\/\\><]/g, "-"); // slashes and stripes
+	name = name.replace(/:/g, " - "); // colon
+	name = name.replace(/\-+\s+\-+/g, "-"); // redundant dashes
+	name = name.replace(/\s+/g, " "); // redundant spaces
+	name = name.replace(/^\s|\s$/g, ""); // start/end spaces
+	name = name.replace(/^\-+\s+|\s+\-+$/g, ""); // start/end dashes
+	return name;
 }
 
 /** Highlights all the text in the element, ready for a ctrl+c. */
@@ -731,18 +736,35 @@ function processTwitter() {
 
 /** Bluesky */
 function processBluesky() {
-	const href = location.href.split('/');
-	const author = href[4].match(/(.+?).bsky.social/)[1];
-	const postId = href[6];
-	const expoimage = document.querySelector("div[data-expoimage] img");
-	if (expoimage) {
+	const processedUrls = [];
+	const observer = new MutationObserver(changes => {
+		changes.forEach(change => {
+			if (change.addedNodes.length > 0) {
+				for (const node of change.addedNodes) {
+					const expoimage = node.querySelector("div[data-expoimage] img");
+					if (expoimage && !processedUrls.includes(location.href)) {
+						processedUrls.push(location.href);
+						processNode(expoimage);
+						break;
+					}
+				}
+			}
+		});
+	});
+	observer.observe(document.body, { childList: true, subtree: true });
+
+	function processNode(expoimage) {
+		const href = location.href.split('/');
+		const author = href[4].match(/(.+?).bsky.social/)[1];
+		const postId = href[6];
 		const url = expoimage.src.replace("feed_thumbnail", "feed_fullsize");
+		const ext = url.split("@")[1];
 		const postBox = getParent(expoimage, 8);
-		let name = "";
+		let name;
 		if (postBox && postBox.children.length > 0) {
-			name = parseName(postBox.children[0].innerText);
+			name = `${author} - ${clean(postBox.children[0].innerText)} [${postId}].${ext}`;
 		} else {
-			name = postId;
+			name = `${author} - ${postId}.${ext}`;
 		}
 		const saBtn = createAndAssign("button", url, name, () => {
 			console.warn("Unable to create Save As button.");
@@ -817,6 +839,7 @@ window.addEventListener("load", function () {
 });
 
 /* Changelog:
+ ** 5.8: added support for Bluesky
  ** 5.7: added support for Subscribestar, dropped support for DeviantArt
  ** 5.6: fixed action bar detection for X/Twitter
  ** 5.5: added partial support for X/Twitter
