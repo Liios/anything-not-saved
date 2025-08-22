@@ -23,5 +23,13 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 			extList[i] = ext;
 		}
 	}
-	btn.addEventListener("click", () => saveAs(btn, urlList, extList, artName));
+	const pairList = [];
+	if (urlList.length !== extList.length) {
+		console.warn(`Unable to assign an action to the button: ${urlList.length} URL / ${extList.length} extensions.`);
+		return;
+	}
+	for (let i = 0; i < urlList.length; ++i) {
+		pairList.push({url: urlList[i], ext: extList[i]});
+	}
+	btn.addEventListener("click", event => saveAs(event, btn, pairList, artName));
 }

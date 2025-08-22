@@ -8,6 +8,8 @@ set parts = fso.getFolder("./parts")
 dim lost : lost = ""
 for each part in parts.files
 	dim partContent : partContent = readAsUtf8(part.path)
+	'Escapes every dollar sign so that they're not ignored by the regexp substitution
+	partContent = Replace(partContent, "$", "$$")
 	set funcMatcher = new RegExp
 	funcMatcher.multiLine = true
 	funcMatcher.pattern = "(async )?function " + fso.getBaseName(part) + "\(.*\) {[\S\s]+?^}$\r\n"

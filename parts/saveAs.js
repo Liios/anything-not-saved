@@ -1,18 +1,13 @@
-function saveAs(btn, urlList, extList, artName) {
+function saveAs(event, btn, pairList, artName) {
+	event.preventDefault();
 	let completed = 0;
-	if (typeof urlList === "string") {
-		urlList = [urlList];
-	}
-	if (typeof extList === "string") {
-		extList = [extList];
-	}
-	const total = urlList.length;
+	const total = pairList.length;
 	// No rage-clicks
 	setBusy();
 	// Only one picture to be saved as
 	if (total === 1) {
-		const url = urlList[0];
-		const ext = extList[0];
+		const url = pairList[0].url;
+		const ext = pairList[0].ext;
 		GM.download({
 			url: url,
 			name: artName + "." + ext,
@@ -25,8 +20,8 @@ function saveAs(btn, urlList, extList, artName) {
 		const requestList = [];
 		btn.innerText = "Download (0/" + total + ")";
 		for (let i = 0; i < total; ++i) {
-			const url = urlList[i];
-			const ext = extList[i];
+			const url = pairList[i].url;
+			const ext = pairList[i].ext;
 			const request = GM.download({
 				url: url,
 				name: artName + " - " + padWithZeroes(i + 1, total) + "." + ext,
