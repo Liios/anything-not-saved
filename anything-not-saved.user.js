@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Anything Not Saved
 // @namespace	https://openuserjs.org/users/Sauvegarde
-// @version 	5.8
+// @version		5.8
 // @author		Sauvegarde
 // @description	Save every picture you like in one click.
 // @match		https://aryion.com/g4/view/*
@@ -14,17 +14,16 @@
 // @match		https://www.newgrounds.com/art/view/*/*
 // @match		https://twitter.com/*
 // @match		https://x.com/*
-// @match       https://bsky.app/*
+// @match		https://bsky.app/*
 // @match		https://subscribestar.adult/*
-// @connect	 	wixmp.com
-// @connect		twitter-video-download.com
 // @run-at		document-start
 // @grant		GM_xmlhttpRequest
 // @grant		GM_download
 // @iconURL		https://i.ibb.co/59f9S0g/floppy.png
+// @homepageURL https://github.com/Liios/anything-not-saved
 // @updateURL	https://openuserjs.org/meta/Sauvegarde/Anything_Not_Saved.meta.js
 // @downloadURL	https://openuserjs.org/install/Sauvegarde/Anything_Not_Saved.user.js
-// @supportURL	https://openuserjs.org/scripts/Sauvegarde/Anything_Not_Saved/issues
+// @supportURL	https://github.com/Liios/anything-not-saved/issues
 // @copyright	2024, Sauvegarde (https://openuserjs.org/users/Sauvegarde)
 // @license		GPL-3.0-or-later
 // ==/UserScript==
@@ -38,7 +37,6 @@
  * Requisite permissions:
  * * GM_xmlhttpRequest is required for websites that serves content indirectly.
  *     A head request must be sent in order to know the file extension or the "Save as" button won't work.
- *     Case in point: DeviantArt, which uses `wixmp.com` as a CDN.
  * * GM_download is required for "Save as" functionality.
  *     TamperMonkey uses an extension whitelist for download candidates (pictures are covered by default).
  *     You may have to extend it yourself if you want to download more exotic files ("docx", "pdf", etc).

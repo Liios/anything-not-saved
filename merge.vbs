@@ -1,7 +1,7 @@
 const adTypeBinary = 1
 const adTypeText = 2
 const adSaveCreateOverWrite = 2
-const buildPath = "Anything Not Saved.user.js"
+const buildPath = "anything-not-saved.user.js"
 dim buildContent : buildContent = readAsUtf8(buildPath)
 set fso = createObject("Scripting.FileSystemObject")
 set parts = fso.getFolder("./parts")
