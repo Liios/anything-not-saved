@@ -8,8 +8,7 @@ Requisite permissions:
 - `GM_xmlhttpRequest` to get the file extension (with a head request) when the website uses a CDN.
 - `GM_download` to make the "Save as" button work.
 
-Supported websites, as of 2024-01-05:
-- DeviantArt: ![DeviantArt](https://i.ibb.co/TWWzdd2/deviantart.png "DeviantArt")
+Supported websites, as of 2025-08-22:
 - Eka's portal: ![Aryion](https://i.ibb.co/mBN5SwD/eka.png "Aryion")
 - FurAffinity: ![FurAffinity](https://i.ibb.co/Pt1tQZV/furaffinity.png "FurAffinity")
 - Hentai-Foundry: ![Hentai-Foundry](https://i.ibb.co/D7ztTDD/hentai-foundry.png "Hentai-Foundry")
@@ -17,6 +16,7 @@ Supported websites, as of 2024-01-05:
 - Newgrounds: ![Newgrounds](https://i.ibb.co/B4TBcbp/newgrounds-sa.png "Weasyl")
 - Weasyl: ![Weasyl](https://i.ibb.co/frvTyYx/weasyl.png "Weasyl")
 - X/Twitter: ![X-Twitter](https://i.ibb.co/rMw4KMw/x-sa.png "X/Twitter")
+- Bluesky: ![Bluesky](https://i.ibb.co/1BKnc3F/bsky-sa.png "Bluesky")
 
 Remember: anything not saved will be lost. Censorship is rampant and artists sometimes nuke their gallery due to external pressure. If you love it, save it.
 
