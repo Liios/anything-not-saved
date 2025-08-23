@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name		Anything Not Saved
-// @namespace	https://openuserjs.org/users/Sauvegarde
-// @version		5.8
-// @author		Sauvegarde
+// @namespace	https://github.com/Liios
+// @version		5.8.0
+// @author		Liios
 // @description	Save every picture you like in one click.
 // @match		https://aryion.com/g4/view/*
 // @match		https://www.furaffinity.net/view/*
@@ -12,19 +12,17 @@
 // @match		https://inkbunny.net/submissionview.php?id=*
 // @match		https://www.weasyl.com/*/submissions/*
 // @match		https://www.newgrounds.com/art/view/*/*
-// @match		https://twitter.com/*
 // @match		https://x.com/*
 // @match		https://bsky.app/*
-// @match		https://subscribestar.adult/*
 // @run-at		document-start
 // @grant		GM_xmlhttpRequest
 // @grant		GM_download
 // @iconURL		https://i.ibb.co/59f9S0g/floppy.png
 // @homepageURL https://github.com/Liios/anything-not-saved
-// @updateURL	https://openuserjs.org/meta/Sauvegarde/Anything_Not_Saved.meta.js
-// @downloadURL	https://openuserjs.org/install/Sauvegarde/Anything_Not_Saved.user.js
+// @updateURL	https://github.com/Liios/anything-not-saved/raw/refs/heads/main/anything-not-saved.meta.js
+// @downloadURL	https://github.com/Liios/anything-not-saved/raw/refs/heads/main/anything-not-saved.user.js
 // @supportURL	https://github.com/Liios/anything-not-saved/issues
-// @copyright	2024, Sauvegarde (https://openuserjs.org/users/Sauvegarde)
+// @copyright	2025, Liios
 // @license		GPL-3.0-or-later
 // ==/UserScript==
 
@@ -867,31 +865,6 @@ function processBluesky() {
 	}
 }
 
-/** Subscribestar */
-function processSubscribestar() {
-	document.body.addEventListener("click", () => setTimeout(main, 500), true);
-	function main() {
-		const imgLinks = document.querySelectorAll("a.gallery-image_original_link");
-		if (imgLinks.length === 1) {
-			const imgLink = imgLinks[0];
-			const existing = document.getElementById("artname-btn");
-			if (!existing && GM_download) {
-				const sabt = createAndAssign("a", imgLink.href, imgLink.download);
-				sabt.className = imgLink.className;
-				sabt.style.display = "inline-block";
-				sabt.style.padding = "0 0 10px 0";
-				sabt.style.cursor = "pointer";
-				const sep = document.createElement("span");
-				sep.innerHTML = "&nbsp;|&nbsp;";
-				imgLink.style.display = "inline-block";
-				imgLink.style.padding = "10px 0 0 0";
-				imgLink.parentElement.appendChild(sep);
-				imgLink.parentElement.appendChild(sabt);
-			}
-		}
-	}
-}
-
 window.addEventListener("load", function () {
 	// Button becomes red if it doesn't work
 	addCssRule("#artname-btn.failed {color: red !important;}");
@@ -915,15 +888,11 @@ window.addEventListener("load", function () {
 		case "www.newgrounds.com":
 			processNewgrounds();
 			break;
-		case "twitter.com":
 		case "x.com":
 			processTwitter();
 			break;
 		case "bsky.app":
 			processBluesky();
-			break;
-		case "subscribestar.adult":
-			processSubscribestar();
 			break;
 		default:
 			console.error("URL include / host filtering mismatch.");
@@ -932,8 +901,8 @@ window.addEventListener("load", function () {
 });
 
 /* Changelog:
- ** 5.8: added support for Bluesky
- ** 5.7: added support for Subscribestar, dropped support for DeviantArt
+ ** 5.8: added support for Bluesky, dropped support for SubscribeStar
+ ** 5.7: added support for SubscribeStar, dropped support for DeviantArt
  ** 5.6: fixed action bar detection for X/Twitter
  ** 5.5: added partial support for X/Twitter
  ** 5.4: handled Newgrounds slideshow, improved DA, refactored all the asynchronous sub-processes

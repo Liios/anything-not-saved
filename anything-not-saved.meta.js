@@ -1,5 +1,5 @@
 // ==UserScript==
 // @name		Anything Not Saved
-// @namespace	https://openuserjs.org/users/Sauvegarde
-// @version		5.8
+// @namespace	https://github.com/Liios
+// @version		5.8.0
 // ==/UserScript==
