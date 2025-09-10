@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Anything Not Saved
 // @namespace	https://github.com/Liios
-// @version		5.8.0
+// @version		5.8.1
 // @author		Liios
 // @description	Save every picture you like in one click.
 // @match		https://aryion.com/g4/view/*
@@ -772,8 +772,15 @@ function processBluesky() {
 		}
 		const post = image.closest("div[role=link]") ?? image.closest("div + div + div");
 		const anchors = post.querySelectorAll("a");
-		const anchorPieces = anchors[3]?.href?.match(/\/profile\/(.+?)(?:\.\w+)*\/post\/(.+)/);
-		const locationPieces = location.href.match(/.+\/profile\/(.+?)(?:\.\w+)*\/post\/(.+)/);
+		let anchorPieces;
+		for (const anchor of anchors) {
+			// Any referential URL including the author and post ID will do
+			anchorPieces = anchor.href?.match(/\/profile\/(.+?)(?:\.\w+)*\/post\/(\w+)(?:\/.*)*/);
+			if (anchorPieces) {
+				break;
+			}
+		}
+		const locationPieces = location.href.match(/.+\/profile\/(.+?)(?:\.\w+)*\/post\/(\w+)/);
 		let urlPieces;
 		if (anchorPieces) {
 			// We are looking at a random post in a timeline
@@ -783,6 +790,7 @@ function processBluesky() {
 			urlPieces = locationPieces;
 		} else {
 			// We are looking at a specific post BUT the URL hasn't updated yet
+			console.warn("No URL detected.");
 			return;
 		}
 		const author = urlPieces[1];
@@ -791,6 +799,7 @@ function processBluesky() {
 		const imageUrl = image.src.replace("feed_thumbnail", "feed_fullsize");
 		const imageExt = imageUrl.split("@")[1];
 		if (!imageExt) {
+			console.warn("No extension detected.");
 			return;
 		}
 		const postText = post.querySelector("[data-word-wrap]");
@@ -835,23 +844,27 @@ function processBluesky() {
 	}
 
 	function insertButton(saBtn, post) {
-		saBtn.style = "border: none; background: none; color: #6A7F93; cursor: pointer; line-height: 1; border-radius: 20px; padding: 7px;";
+		saBtn.style.cssText = "border: none; background: none; color: #6A7F93; cursor: pointer; line-height: 1; border-radius: 20px; padding: 7px;";
 		saBtn.addEventListener("mouseenter", event => { event.target.style.background = "#1E2936"; }, false);
 		saBtn.addEventListener("mouseleave", event => { event.target.style.background = "none"; }, false);
 		const icon = disketSvg();
 		icon.style.verticalAlign = "middle";
 		saBtn.innerHTML = "";
 		saBtn.appendChild(icon);
-		const shareBtn = post.querySelector("[data-testid=postShareBtn]");
-		const shareCtn = getParent(shareBtn, 3);
-		if (shareCtn) {
+		const refBtn = post.querySelector("[data-testid=likeBtn]");
+		if (!refBtn) {
+			console.warn("No reference button detected.");
+			return;
+		}
+		const refCtn = refBtn.parentElement;
+		if (refCtn) {
 			// Main post
 			const saCtn = document.createElement("div");
-			saCtn.className = shareCtn.className;
-			saCtn.style = shareCtn.style;
-			saCtn.style.cssText = shareCtn.style.cssText; // I don't understand why this is necessary...
+			saCtn.className = refCtn.className;
+			saCtn.style = refCtn.style;
+			saCtn.style.cssText = refCtn.style.cssText; // I don't understand why this is necessary...
 			saCtn.appendChild(saBtn);
-			shareCtn.parentElement.insertBefore(saCtn, shareCtn);
+			refCtn.parentElement.appendChild(saCtn);
 		} else {
 			// Quote post
 			const context = document.createElement("span");
@@ -864,7 +877,6 @@ function processBluesky() {
 		}
 	}
 }
-
 window.addEventListener("load", function () {
 	// Button becomes red if it doesn't work
 	addCssRule("#artname-btn.failed {color: red !important;}");
