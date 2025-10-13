@@ -64,7 +64,7 @@ function processBluesky() {
 			return;
 		}
 		const postText = post.querySelector("[data-word-wrap]");
-		const processedText = postText ? processText(postText.innerText) : null;
+		const processedText = postText ? cleanTweetText(postText.innerText) : null;
 		let name;
 		if (processedText) {
 			name = `${author} - ${processedText} [${postId}].${imageExt}`;
@@ -88,19 +88,6 @@ function processBluesky() {
 			});
 			insertButton(saBtn, post);
 			nameUrlRelation.set(postId, [imageUrl]);
-		}
-	}
-
-	function processText(text) {
-		const shortenedMentions = text.replace(/\n@(.+)(?:\.\w+)*/g, ' @$1');
-		// Discards lines that contains a content wanring or only blank spaces
-		const lines = shortenedMentions.split("\n").filter(x => !x.match(/[^\w]?CW[^\w]?.+/i) && x.trim().length !== 0);
-		if (lines.length > 0) {
-			const firstSentence = lines[0].split(/\.|\?|\!/)[0];
-			const removedHashtag = firstSentence.replace(/\#\S+\s?/g, "");
-			return clean(removedHashtag);
-		} else {
-			return null;
 		}
 	}
 

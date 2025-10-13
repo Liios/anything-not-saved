@@ -42,17 +42,19 @@ function processTwitter() {
 	}
 
 	function processTweet(anchor, srcElem) {
-		const name = parseName(anchor.href);
-		const url = parseUrl(srcElem.src);
 		const article = anchor.closest("article");
 		if (!article) {
 			// Not a tweet
 			return;
 		}
+		const url = parseUrl(srcElem.src);
 		if (url.startsWith("blob")) {
 			// Cannot process
 			return;
 		}
+		const tweetText = article.querySelector("[data-testid=tweetText]");
+		const cleanedTweetText = cleanTweetText(tweetText?.innerText);
+		const name = parseName(anchor.href, cleanedTweetText);
 		let preBtn = article.querySelector("#artname-btn");
 		if (preBtn) {
 			const urlArray = nameUrlRelation.get(name);
@@ -74,12 +76,16 @@ function processTwitter() {
 		}
 	}
 
-	function parseName(href) {
+	function parseName(href, tweetText) {
 		// https://twitter.com/{user}/status/{mark}
 		const elem = href.split("/");
 		const user = elem[3];
 		const mark = elem[5];
-		return user + " - " + mark;
+		if (tweetText) {
+			return `${user} - ${tweetText} [${mark}]`;
+		} else {
+			return `${user} - ${mark}`;
+		}
 	}
 
 	function parseUrl(src) {

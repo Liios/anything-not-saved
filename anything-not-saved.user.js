@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Anything Not Saved
 // @namespace	https://github.com/Liios
-// @version		5.8.1
+// @version		5.8.2
 // @author		Liios
 // @description	Save every picture you like in one click.
 // @match		https://aryion.com/g4/view/*
@@ -88,6 +88,26 @@ function clean(name) {
 	name = name.replace(/^\s|\s$/g, ""); // start/end spaces
 	name = name.replace(/^\-+\s+|\s+\-+$/g, ""); // start/end dashes
 	return name;
+}
+
+/**
+ * Convert the text of a tweet into something of a filename.
+ * Originally written for Bluesky, despite the name.
+ */
+function cleanTweetText(text) {
+	if (!text) {
+		return null;
+	}
+	const shortenedMentions = text.replace(/\n@(.+)(?:\.\w+)*/g, ' @$1');
+	// Discards lines that contains a content warning or only blank spaces
+	const lines = shortenedMentions.split("\n").filter(x => !x.match(/[^\w]?CW[^\w]?.+/i) && x.trim().length !== 0);
+	if (lines.length > 0) {
+		const firstSentence = lines[0].split(/\.|\?|\!/)[0];
+		const removedHashtag = firstSentence.replace(/\#\S+\s?/g, "");
+		return clean(removedHashtag);
+	} else {
+		return null;
+	}
 }
 
 /** Highlights all the text in the element, ready for a ctrl+c. */
@@ -682,17 +702,19 @@ function processTwitter() {
 	}
 
 	function processTweet(anchor, srcElem) {
-		const name = parseName(anchor.href);
-		const url = parseUrl(srcElem.src);
 		const article = anchor.closest("article");
 		if (!article) {
 			// Not a tweet
 			return;
 		}
+		const url = parseUrl(srcElem.src);
 		if (url.startsWith("blob")) {
 			// Cannot process
 			return;
 		}
+		const tweetText = article.querySelector("[data-testid=tweetText]");
+		const cleanedTweetText = cleanTweetText(tweetText?.innerText);
+		const name = parseName(anchor.href, cleanedTweetText);
 		let preBtn = article.querySelector("#artname-btn");
 		if (preBtn) {
 			const urlArray = nameUrlRelation.get(name);
@@ -714,12 +736,16 @@ function processTwitter() {
 		}
 	}
 
-	function parseName(href) {
+	function parseName(href, tweetText) {
 		// https://twitter.com/{user}/status/{mark}
 		const elem = href.split("/");
 		const user = elem[3];
 		const mark = elem[5];
-		return user + " - " + mark;
+		if (tweetText) {
+			return `${user} - ${tweetText} [${mark}]`;
+		} else {
+			return `${user} - ${mark}`;
+		}
 	}
 
 	function parseUrl(src) {
@@ -803,7 +829,7 @@ function processBluesky() {
 			return;
 		}
 		const postText = post.querySelector("[data-word-wrap]");
-		const processedText = postText ? processText(postText.innerText) : null;
+		const processedText = postText ? cleanTweetText(postText.innerText) : null;
 		let name;
 		if (processedText) {
 			name = `${author} - ${processedText} [${postId}].${imageExt}`;
@@ -827,19 +853,6 @@ function processBluesky() {
 			});
 			insertButton(saBtn, post);
 			nameUrlRelation.set(postId, [imageUrl]);
-		}
-	}
-
-	function processText(text) {
-		const shortenedMentions = text.replace(/\n@(.+)(?:\.\w+)*/g, ' @$1');
-		// Discards lines that contains a content wanring or only blank spaces
-		const lines = shortenedMentions.split("\n").filter(x => !x.match(/[^\w]?CW[^\w]?.+/i) && x.trim().length !== 0);
-		if (lines.length > 0) {
-			const firstSentence = lines[0].split(/\.|\?|\!/)[0];
-			const removedHashtag = firstSentence.replace(/\#\S+\s?/g, "");
-			return clean(removedHashtag);
-		} else {
-			return null;
 		}
 	}
 
@@ -877,6 +890,7 @@ function processBluesky() {
 		}
 	}
 }
+
 window.addEventListener("load", function () {
 	// Button becomes red if it doesn't work
 	addCssRule("#artname-btn.failed {color: red !important;}");
