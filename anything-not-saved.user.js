@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Anything Not Saved
 // @namespace	https://github.com/Liios
-// @version		5.8.3
+// @version		5.8.4
 // @author		Liios
 // @description	Save every picture you like in one click.
 // @match		https://aryion.com/g4/view/*
@@ -82,7 +82,9 @@ function parseName(name) {
 function clean(name) {
 	name = name.replace(/[?.*_~=`"#]/g, " "); // forbidden characters
 	name = name.replace(/[\/\\><]/g, "-"); // slashes and stripes
-	name = name.replace(/\$/g, "!"); // dollar
+	// Dollar signs inside a word ("pu$$y" => "puSSy")
+	name = name.replace(/(\w)(\$+)(\w)/g, (_, before, dollars, after) => before + 'S'.repeat(dollars.length) + after);
+	name = name.replace(/\$/g, "!"); // other dollar signs ("[$]" => "[!]")
 	name = name.replace(/:/g, " - "); // colon
 	name = name.replace(/\-+\s+\-+/g, "-"); // redundant dashes
 	name = name.replace(/\s+/g, " "); // redundant spaces
