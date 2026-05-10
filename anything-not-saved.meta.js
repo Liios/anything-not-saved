@@ -1,5 +1,5 @@
 // ==UserScript==
 // @name		Anything Not Saved
 // @namespace	https://github.com/Liios
-// @version		5.8.5
+// @version		5.8.6
 // ==/UserScript==
