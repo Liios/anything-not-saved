@@ -31,7 +31,11 @@ function processBluesky() {
 		if (frame.getAttribute("data-testid") === "userBannerImage") {
 			return; // Banner, nothing to do
 		}
-		const post = image.closest("div[role=link]") ?? image.closest("div + div + div");
+		const post = getParent(image.closest("div[role=link]") ?? image.closest("div + div + div"), 2);
+		if(!post) {
+			console.warn("No post detected.");
+			return;
+		}
 		const anchors = post.querySelectorAll("a");
 		let anchorPieces;
 		for (const anchor of anchors) {
@@ -57,12 +61,12 @@ function processBluesky() {
 		const author = urlPieces[1];
 		const postId = urlPieces[2];
 		// Generates a name
-		const imageUrl = image.src.replace("feed_thumbnail", "feed_fullsize");
-		const imageExt = imageUrl.split("@")[1];
-		if (!imageExt) {
-			console.warn("No extension detected.");
+		if (!image.src.includes("feed_thumbnail") && !image.src.includes("feed_fullsize")) {
+			// Avatar pictures and such are discarded
 			return;
 		}
+		const imageUrl = image.src.replace("feed_thumbnail", "feed_fullsize");
+		const imageExt = imageUrl.split("@")[1] ?? "webp"; // Blusky now serves webp by default
 		const postText = post.querySelector("[data-word-wrap]");
 		const processedText = postText ? cleanTweetText(postText.innerText) : null;
 		let name;
