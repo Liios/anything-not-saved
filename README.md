@@ -1,12 +1,8 @@
 **Anything Not Saved** adds a **Save as** button for artworks in compatible websites.
 
-This button queries the full size image and opens the "Save as" prompt for you to save it at the right place in one click. If multiple artworks are present under the same name then the button becomes **Download all**, and the pictures are saved in your default download location.
+This button queries the full size image and opens the "Save as" prompt for you to save it at the right place in one click. If multiple artworks are present, then the button becomes **Download all**, and the pictures are saved in your default download location.
 
-A Windows-compliant filename is provided as `artist - artwork` format. Forbidden characters will be replaced (typically: `:` => ` - `) or stripped. If the button creation fails, it will sometimes fallback to a text node with the formatted name (pre-highlighted for ctrl+c plus manual saving).
-
-Requisite permissions:
-- `GM_xmlhttpRequest` to get the file extension (with a head request) when the website uses a CDN.
-- `GM_download` to make the "Save as" button work.
+A Windows-compliant filename is provided in the `artist - artwork` format. Forbidden characters are replaced (typically: `:` => ` - `) or stripped. If the button creation fails, it will sometimes show a text node with a formatted name that can be copied for manual saving.
 
 Supported websites, as of 2025-08-22:
 - Eka's portal: ![Aryion](https://i.ibb.co/mBN5SwD/eka.png "Aryion")
@@ -21,3 +17,5 @@ Supported websites, as of 2025-08-22:
 Remember: anything not saved will be lost. Censorship is rampant and artists sometimes nuke their gallery due to external pressure. If you love it, save it.
 
 This script is developed and tested with the plugin TamperMonkey on Firefox.
+
+This script does not function properly with Violentmonkey 2.37.0 as the `save as` property of GM.download is not yet supported.
