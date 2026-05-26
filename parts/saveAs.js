@@ -54,17 +54,17 @@ function saveAs(event, btn, pairList, artName) {
 	function handleError(error, ext) {
 		switch (error.error) {
 			case "not_enabled":
-				alert("GM_download is not enabled.");
+				alert("GM.download is not enabled.");
 				break;
 			case "not_permitted":
-				alert("GM_download permission has not been granted.");
+				alert("GM.download permission has not been granted.");
 				break;
 			case "not_supported":
-				alert("GM_download is not supported by the browser/version.");
+				alert("GM.download is not supported by the browser/version.");
 				break;
 			case "not_succeeded":
 				console.error(error);
-				alert("GM_download has vulgarly failed. Please retry.");
+				alert("GM.download has vulgarly failed. Please retry.");
 				break;
 			case "not_whitelisted":
 				// https://github.com/Tampermonkey/tampermonkey/issues/643
@@ -80,7 +80,7 @@ function saveAs(event, btn, pairList, artName) {
 				break;
 			default:
 				console.error(error);
-				alert("GM_download has unexpectedly failed with the following error: " + error.error);
+				alert("GM.download has unexpectedly failed with the following error: " + error.error);
 				break;
 		}
 		unsetBusy();

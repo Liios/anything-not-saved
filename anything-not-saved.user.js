@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Anything Not Saved
 // @namespace	https://github.com/Liios
-// @version		5.8.7
+// @version		5.8.8
 // @author		Liios
 // @description	Save every picture you like in one click.
 // @match		https://aryion.com/g4/view/*
@@ -15,8 +15,8 @@
 // @match		https://x.com/*
 // @match		https://bsky.app/*
 // @run-at		document-start
-// @grant		GM_xmlhttpRequest
-// @grant		GM_download
+// @grant		GM.xmlHttpRequest
+// @grant		GM.download
 // @iconURL		https://i.ibb.co/59f9S0g/floppy.png
 // @homepageURL https://github.com/Liios/anything-not-saved
 // @updateURL	https://github.com/Liios/anything-not-saved/raw/refs/heads/main/anything-not-saved.meta.js
@@ -33,9 +33,9 @@
  * If the button cannot be created, it will fallback to a pre-highlighted text node with the proper name.
  *
  * Requisite permissions:
- * * GM_xmlhttpRequest is required for websites that serves content indirectly.
- *     A head request must be sent in order to know the file extension or the "Save as" button won't work.
- * * GM_download is required for "Save as" functionality.
+ * * GM.xmlHttpRequest is required for websites that serves content indirectly (via a CDN).
+ *     A head request is sent in order to know the file extension, otherwise the "Save as" button won't work.
+ * * GM.download is required for "Save as" functionality.
  *     TamperMonkey uses an extension whitelist for download candidates (pictures are covered by default).
  *     You may have to extend it yourself if you want to download more exotic files ("docx", "pdf", etc).
  *     Go to Dashboard > Parameters > Downloads and add the extensions you want in the list.
@@ -313,17 +313,17 @@ function saveAs(event, btn, pairList, artName) {
 	function handleError(error, ext) {
 		switch (error.error) {
 			case "not_enabled":
-				alert("GM_download is not enabled.");
+				alert("GM.download is not enabled.");
 				break;
 			case "not_permitted":
-				alert("GM_download permission has not been granted.");
+				alert("GM.download permission has not been granted.");
 				break;
 			case "not_supported":
-				alert("GM_download is not supported by the browser/version.");
+				alert("GM.download is not supported by the browser/version.");
 				break;
 			case "not_succeeded":
 				console.error(error);
-				alert("GM_download has vulgarly failed. Please retry.");
+				alert("GM.download has vulgarly failed. Please retry.");
 				break;
 			case "not_whitelisted":
 				// https://github.com/Tampermonkey/tampermonkey/issues/643
@@ -339,7 +339,7 @@ function saveAs(event, btn, pairList, artName) {
 				break;
 			default:
 				console.error(error);
-				alert("GM_download has unexpectedly failed with the following error: " + error.error);
+				alert("GM.download has unexpectedly failed with the following error: " + error.error);
 				break;
 		}
 		unsetBusy();
@@ -409,7 +409,7 @@ async function detectExtension(btn, url, errorCallback) {
 			return ext.replace("jpeg", "jpg");
 		}
 	} else {
-		console.error("Cannot determine extension of target: no GM_xmlhttpRequest permission.");
+		console.error("Cannot determine extension of target: no GM.xmlHttpRequest permission.");
 	}
 	return null;
 }

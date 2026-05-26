@@ -49,7 +49,7 @@ async function detectExtension(btn, url, errorCallback) {
 			return ext.replace("jpeg", "jpg");
 		}
 	} else {
-		console.error("Cannot determine extension of target: no GM_xmlhttpRequest permission.");
+		console.error("Cannot determine extension of target: no GM.xmlHttpRequest permission.");
 	}
 	return null;
 }
