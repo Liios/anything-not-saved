@@ -7,6 +7,7 @@
 // @match		https://aryion.com/g4/view/*
 // @match		https://www.furaffinity.net/view/*
 // @match		https://www.furaffinity.net/full/*
+// @match		https://d.furaffinity.net/*
 // @match		https://www.hentai-foundry.com/pictures/*
 // @match		https://inkbunny.net/s/*
 // @match		https://inkbunny.net/submissionview.php?id=*
@@ -22,7 +23,7 @@
 // @updateURL	https://github.com/Liios/anything-not-saved/raw/refs/heads/main/anything-not-saved.meta.js
 // @downloadURL	https://github.com/Liios/anything-not-saved/raw/refs/heads/main/anything-not-saved.user.js
 // @supportURL	https://github.com/Liios/anything-not-saved/issues
-// @copyright	2025, Liios
+// @copyright	2026, Liios
 // @license		GPL-3.0-or-later
 // ==/UserScript==
 
@@ -267,11 +268,12 @@ function saveAs(event, btn, pairList, artName) {
 	if (total === 1) {
 		const url = pairList[0].url;
 		const ext = pairList[0].ext;
+		const name = artName + "." + ext;
 		GM.download({
 			url: url,
-			name: artName + "." + ext,
+			name: name,
 			saveAs: true,
-			onerror: error => handleError(error, ext),
+			onerror: error => handleError(error, url, name, ext),
 			ontimeout: () => handleTimeout(),
 		}).then(unsetBusy);
 	} else {
@@ -281,12 +283,13 @@ function saveAs(event, btn, pairList, artName) {
 		for (let i = 0; i < total; ++i) {
 			const url = pairList[i].url;
 			const ext = pairList[i].ext;
+			const name = artName + " - " + padWithZeroes(i + 1, total) + "." + ext;
 			const request = GM.download({
 				url: url,
-				name: artName + " - " + padWithZeroes(i + 1, total) + "." + ext,
+				name: name,
 				saveAs: false,
 				onload: response => completeOne(),
-				onerror: error => handleError(error, ext),
+				onerror: error => handleError(error, url, name, ext),
 				ontimeout: () => handleTimeout(),
 			});
 			requestList.push(request);
@@ -310,7 +313,7 @@ function saveAs(event, btn, pairList, artName) {
 		completed = 0;
 	}
 
-	function handleError(error, ext) {
+	function handleError(error, url, name, ext) {
 		switch (error.error) {
 			case "not_enabled":
 				alert("GM.download is not enabled.");
@@ -337,6 +340,11 @@ function saveAs(event, btn, pairList, artName) {
 			case "Download canceled by the user":
 				// User just clicked "Cancel" on the prompt
 				break;
+			case "xhr_failed":
+				// Probably Cloudflare CDN
+				console.error(error);
+				fallback(url, name);
+				break;
 			default:
 				console.error(error);
 				alert("GM.download has unexpectedly failed with the following error: " + error.error);
@@ -348,6 +356,14 @@ function saveAs(event, btn, pairList, artName) {
 	function handleTimeout() {
 		alert("The download target has timed out :(");
 		unsetBusy();
+	}
+
+	function fallback(url, name) {
+		const a = document.createElement("a");
+		a.href = `${url}?name=${name}`;
+		a.target = "_blank";
+		a.rel = "noopener";
+		a.click();
 	}
 }
 
@@ -484,6 +500,20 @@ function processFuraffinity() {
 		sabt.className += down.className;
 		down.insertAdjacentElement("afterend", sabt);
 		sabt.insertAdjacentHTML("beforebegin", " ");
+	}
+}
+
+/** FurAffinity CDN */
+function processFuraffinityCdn() {
+	const searchParams = new URLSearchParams(location.search);
+	const name = searchParams.get("name");
+	if (name) {
+		const a = document.createElement("a");
+		a.href = location.href;
+		a.download = name;
+		a.target = "_blank";
+		a.rel = "noopener";
+		a.click();
 	}
 }
 
@@ -872,6 +902,9 @@ window.addEventListener("load", function () {
 			break;
 		case "www.furaffinity.net":
 			processFuraffinity();
+			break;
+		case "d.furaffinity.net":
+			processFuraffinityCdn();
 			break;
 		case "www.hentai-foundry.com":
 			processHentaiFoundry();
