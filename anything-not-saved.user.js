@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Anything Not Saved
 // @namespace	https://github.com/Liios
-// @version		5.8.8
+// @version		5.8.9
 // @author		Liios
 // @description	Save every picture you like in one click.
 // @match		https://aryion.com/g4/view/*
@@ -607,8 +607,8 @@ function processNewgrounds() {
 		dlbt.onclick = () => downloadSlideshow(nav, dlbt);
 		addButton(dlbt);
 	} else {
-		const artList = document.querySelectorAll(".pod-body a[data-action=view-image]");
-		urlList = [...artList].map(a => a.href);
+		urlList = [...document.querySelectorAll(".pod-body a")].map(a => a.href);
+		urlList = urlList.filter(url => url.startsWith("https://art.ngfiles.com/images/"));
 		const sabt = createAndAssign("button", urlList, name, () => {
 			console.warn("Unable to create Save As button.");
 		});
