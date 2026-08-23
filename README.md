@@ -20,4 +20,5 @@ This script is developed and tested with the plugin TamperMonkey on Firefox.
 
 Known issues:
 - Cloudflare now challenges every XHR request which means FurAffinity is download-only until further notice.
-- This script does not function properly with Violentmonkey 2.37.0 as the `save as` property of GM.download is not yet supported.
+- This script does not function properly with Violentmonkey 2.37.0 as the `saveAs` property of GM.download is not yet supported.
+- Weird behavior of the `saveAs` property with audio/video from Newgrounds where the file is force-renamed to .avi / .aac (instead of .mp4 / .mp3).
