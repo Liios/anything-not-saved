@@ -1,7 +1,7 @@
-function createAndAssign(tagName, urlList, artName, errorCallback) {
+function createAndAssign(tagName, urlList, artName, onErrorCallback) {
 	const btn = createButton(tagName);
 	if (!urlList || !GM.download || forceFailure) {
-		admitFailure(btn, errorCallback);
+		admitFailure(btn, onErrorCallback);
 		return btn;
 	}
 	if (typeof urlList === "string") {

@@ -9,24 +9,27 @@ function processNewgrounds() {
 		name = `${artists} - ${document.title}`;
 	}
 	const nav = document.querySelector("#gallery-nav");
-	let urlList = [];
 	if (nav) {
 		// fuck it...
 		const dlbt = createButton("button", "Download all");
 		dlbt.onclick = () => downloadSlideshow(nav, dlbt);
 		addButton(dlbt);
-	} else if (document.querySelector("video")) {
-		downloadMedia(name);
+	} else if (location.pathname.startsWith("/portal/view")) {
+		downloadVideo(name);
+	} else if (location.pathname.startsWith("/audio/listen")) {
+		let urlList = [...document.querySelectorAll("audio source")].map(el => el.src);
+		urlList = urlList.filter(url => url.startsWith("https://audio.ngfiles.com/"));
+		// It saves as AAC even if the source and name both say MP3. Annoying...
+		const sabt = createAndAssign("button", urlList, name);
+		addButton(sabt);
 	} else {
-		urlList = [...document.querySelectorAll(".pod-body a")].map(a => a.href);
+		let urlList = [...document.querySelectorAll(".pod-body a")].map(a => a.href);
 		urlList = urlList.filter(url => url.startsWith("https://art.ngfiles.com/images/"));
-		const sabt = createAndAssign("button", urlList, name, () => {
-			console.warn("Unable to create Save As button.");
-		});
+		const sabt = createAndAssign("button", urlList, name);
 		addButton(sabt);
 	}
 
-	async function downloadMedia(name) {
+	async function downloadVideo(name) {
 		const id = location.href.split('/').pop();
 		const infoRequest = await GM.xmlHttpRequest({
 			method: "get",
@@ -60,7 +63,8 @@ function processNewgrounds() {
 				cursor: "pointer"
 			});
 			const src = sources[key][0].src;
-			assignClick(option, src, name, () => console.warn(`Saving of ${src} has failed.`), hideMenu);
+			// Same here, videos are force-named to AVI where they are clearly MP4. What is this, 2007?
+			assignClick(option, src, name, null, hideMenu);
 			menu.appendChild(option);
 		}
 		const sabt = createButton("button");

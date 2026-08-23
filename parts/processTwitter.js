@@ -68,9 +68,7 @@ function processTwitter() {
 			assignClick(preBtn, urlArray, name);
 			preBtn.innerText = "Download all";
 		} else {
-			const saBtn = createAndAssign("button", url, name, () => {
-				console.warn("Unable to create Save As button.");
-			});
+			const saBtn = createAndAssign("button", url, name);
 			addButton(saBtn, article);
 			nameUrlRelation.set(name, [url]);
 		}

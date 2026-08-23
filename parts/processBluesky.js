@@ -87,9 +87,7 @@ function processBluesky() {
 			assignClick(preBtn, urlArray, name);
 		} else {
 			// No Save As button is present, we create a new one
-			const saBtn = createAndAssign("button", imageUrl, name, () => {
-				console.warn("Unable to create Save As button.");
-			});
+			const saBtn = createAndAssign("button", imageUrl, name);
 			insertButton(saBtn, post);
 			nameUrlRelation.set(postId, [imageUrl]);
 		}

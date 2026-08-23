@@ -13,6 +13,7 @@
 // @match		https://inkbunny.net/submissionview.php?id=*
 // @match		https://www.weasyl.com/*/submissions/*
 // @match		https://www.newgrounds.com/art/view/*/*
+// @match       https://www.newgrounds.com/audio/listen/*
 // @match       https://www.newgrounds.com/portal/view/*
 // @match		https://x.com/*
 // @match		https://bsky.app/*
@@ -201,10 +202,10 @@ function createButton(tagName, text) {
  * Create a button which opens the "Save as" dialog with the corrected filename.
  * https://www.tampermonkey.net/documentation.php#GM_download
  */
-function createAndAssign(tagName, urlList, artName, errorCallback) {
+function createAndAssign(tagName, urlList, artName, onErrorCallback) {
 	const btn = createButton(tagName);
 	if (!urlList || !GM.download || forceFailure) {
-		admitFailure(btn, errorCallback);
+		admitFailure(btn, onErrorCallback);
 		return btn;
 	}
 	if (typeof urlList === "string") {
@@ -443,6 +444,8 @@ function admitFailure(btn, fallback) {
 	btn.classList.add("failed");
 	if (fallback) {
 		fallback();
+	} else {
+		console.warn("Unable to create a Save As button.");
 	}
 }
 
@@ -616,24 +619,27 @@ function processNewgrounds() {
 		name = `${artists} - ${document.title}`;
 	}
 	const nav = document.querySelector("#gallery-nav");
-	let urlList = [];
 	if (nav) {
 		// fuck it...
 		const dlbt = createButton("button", "Download all");
 		dlbt.onclick = () => downloadSlideshow(nav, dlbt);
 		addButton(dlbt);
-	} else if (document.querySelector("video")) {
-		downloadMedia(name);
+	} else if (location.pathname.startsWith("/portal/view")) {
+		downloadVideo(name);
+	} else if (location.pathname.startsWith("/audio/listen")) {
+		let urlList = [...document.querySelectorAll("audio source")].map(el => el.src);
+		urlList = urlList.filter(url => url.startsWith("https://audio.ngfiles.com/"));
+		// It saves as AAC even if the source and name both say MP3. Annoying...
+		const sabt = createAndAssign("button", urlList, name);
+		addButton(sabt);
 	} else {
-		urlList = [...document.querySelectorAll(".pod-body a")].map(a => a.href);
+		let urlList = [...document.querySelectorAll(".pod-body a")].map(a => a.href);
 		urlList = urlList.filter(url => url.startsWith("https://art.ngfiles.com/images/"));
-		const sabt = createAndAssign("button", urlList, name, () => {
-			console.warn("Unable to create Save As button.");
-		});
+		const sabt = createAndAssign("button", urlList, name);
 		addButton(sabt);
 	}
 
-	async function downloadMedia(name) {
+	async function downloadVideo(name) {
 		const id = location.href.split('/').pop();
 		const infoRequest = await GM.xmlHttpRequest({
 			method: "get",
@@ -667,7 +673,8 @@ function processNewgrounds() {
 				cursor: "pointer"
 			});
 			const src = sources[key][0].src;
-			assignClick(option, src, name, () => console.warn(`Saving of ${src} has failed.`), hideMenu);
+			// Same here, videos are force-named to AVI where they are clearly MP4. What is this, 2007?
+			assignClick(option, src, name, null, hideMenu);
 			menu.appendChild(option);
 		}
 		const sabt = createButton("button");
@@ -800,9 +807,7 @@ function processTwitter() {
 			assignClick(preBtn, urlArray, name);
 			preBtn.innerText = "Download all";
 		} else {
-			const saBtn = createAndAssign("button", url, name, () => {
-				console.warn("Unable to create Save As button.");
-			});
+			const saBtn = createAndAssign("button", url, name);
 			addButton(saBtn, article);
 			nameUrlRelation.set(name, [url]);
 		}
@@ -924,9 +929,7 @@ function processBluesky() {
 			assignClick(preBtn, urlArray, name);
 		} else {
 			// No Save As button is present, we create a new one
-			const saBtn = createAndAssign("button", imageUrl, name, () => {
-				console.warn("Unable to create Save As button.");
-			});
+			const saBtn = createAndAssign("button", imageUrl, name);
 			insertButton(saBtn, post);
 			nameUrlRelation.set(postId, [imageUrl]);
 		}
