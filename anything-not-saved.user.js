@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Anything Not Saved
 // @namespace	https://github.com/Liios
-// @version		5.8.9
+// @version		5.9.0
 // @author		Liios
 // @description	Save every picture you like in one click.
 // @match		https://aryion.com/g4/view/*
@@ -13,6 +13,7 @@
 // @match		https://inkbunny.net/submissionview.php?id=*
 // @match		https://www.weasyl.com/*/submissions/*
 // @match		https://www.newgrounds.com/art/view/*/*
+// @match       https://www.newgrounds.com/portal/view/*
 // @match		https://x.com/*
 // @match		https://bsky.app/*
 // @run-at		document-start
@@ -221,9 +222,9 @@ function createAndAssign(tagName, urlList, artName, errorCallback) {
 }
 
 /** Assign the "Save as" event with the correct extension on button click. */
-async function assignClick(btn, urlList, artName, errorCallback) {
+async function assignClick(btn, urlList, artName, onErrorCallback, onCompletionCallback) {
 	if (forceFailure) {
-		admitFailure(btn, errorCallback);
+		admitFailure(btn, onErrorCallback);
 		return;
 	}
 	if (typeof urlList === "string") {
@@ -242,7 +243,7 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 		// The extensions must be derived from the URL
 		for (let i = 0; i < urlList.length; ++i) {
 			const url = urlList[i];
-			const ext = await detectExtension(btn, url, errorCallback);
+			const ext = await detectExtension(btn, url, onErrorCallback);
 			extList[i] = ext;
 		}
 	}
@@ -254,11 +255,11 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 	for (let i = 0; i < urlList.length; ++i) {
 		pairList.push({url: urlList[i], ext: extList[i]});
 	}
-	btn.addEventListener("click", event => saveAs(event, btn, pairList, artName));
+	btn.addEventListener("click", event => saveAs(event, btn, pairList, artName, onCompletionCallback));
 }
 
 /** Call GM.download and updates the button status on success/failure. */
-function saveAs(event, btn, pairList, artName) {
+function saveAs(event, btn, pairList, artName, onCompletionCallback) {
 	event.preventDefault();
 	let completed = 0;
 	const total = pairList.length;
@@ -275,7 +276,7 @@ function saveAs(event, btn, pairList, artName) {
 			saveAs: true,
 			onerror: error => handleError(error, url, name, ext),
 			ontimeout: () => handleTimeout(),
-		}).then(unsetBusy);
+		}).then(completeAll);
 	} else {
 		// Batch downloading of multiple pictures
 		const requestList = [];
@@ -294,12 +295,19 @@ function saveAs(event, btn, pairList, artName) {
 			});
 			requestList.push(request);
 		}
-		Promise.all(requestList).then(unsetBusy);
+		Promise.all(requestList).then(completeAll);
 	}
 
 	function completeOne() {
 		completed++;
 		btn.innerText = "Download (" + completed + "/" + total + ")";
+	}
+
+	function completeAll() {
+		if (onCompletionCallback) {
+			onCompletionCallback();
+		}
+		unsetBusy();
 	}
 
 	function setBusy() {
@@ -598,7 +606,15 @@ function processWeasyl() {
 
 /** Newgrounds */
 function processNewgrounds() {
-	const name = parseName(document.title.substr(0, document.title.length - 14));
+	let name;
+	if (/(^.*) by (.*?$)/.test(document.title)) {
+		// "Picture name by artist on Newgrounds"
+		name = parseName(document.title.substr(0, document.title.length - 14));
+	} else {
+		// Video or audio
+		const artists = [...document.querySelectorAll(".authorlinks h4 :first-child")].map(e => e.innerText).join(", ");
+		name = `${artists} - ${document.title}`;
+	}
 	const nav = document.querySelector("#gallery-nav");
 	let urlList = [];
 	if (nav) {
@@ -606,6 +622,8 @@ function processNewgrounds() {
 		const dlbt = createButton("button", "Download all");
 		dlbt.onclick = () => downloadSlideshow(nav, dlbt);
 		addButton(dlbt);
+	} else if (document.querySelector("video")) {
+		downloadMedia(name);
 	} else {
 		urlList = [...document.querySelectorAll(".pod-body a")].map(a => a.href);
 		urlList = urlList.filter(url => url.startsWith("https://art.ngfiles.com/images/"));
@@ -613,6 +631,63 @@ function processNewgrounds() {
 			console.warn("Unable to create Save As button.");
 		});
 		addButton(sabt);
+	}
+
+	async function downloadMedia(name) {
+		const id = location.href.split('/').pop();
+		const infoRequest = await GM.xmlHttpRequest({
+			method: "get",
+			url: `/portal/video/${id}`,
+			accept: "application/json",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Requested-With": "XMLHttpRequest"
+			},
+		});
+		const sources = JSON.parse(infoRequest.response).sources;
+		const menu = document.createElement("div");
+		Object.assign(menu.style, {
+			display: "none",
+			position: "absolute",
+			background: "white",
+			border: "1px solid #ccc",
+			borderRadius: "6px",
+			padding: "4px",
+			marginLeft: "34px",
+			zIndex: "1000"
+		});
+		for (let key of Object.keys(sources)) {
+			const option = document.createElement("button");
+			option.textContent = key;
+			Object.assign(option.style, {
+				display: "block",
+				width: "100%",
+				border: "none",
+				background: "none",
+				cursor: "pointer"
+			});
+			const src = sources[key][0].src;
+			assignClick(option, src, name, () => console.warn(`Saving of ${src} has failed.`), hideMenu);
+			menu.appendChild(option);
+		}
+		const sabt = createButton("button");
+		sabt.addEventListener("click", toggleMenu);
+		addButton(sabt);
+		sabt.parentElement.appendChild(menu);
+		// Hide the menu when you click outside
+		document.addEventListener("click", (event) => {
+			if (![menu, sabt].some(el => el.contains(event.target))) {
+				hideMenu();
+			}
+		});
+
+		function hideMenu() {
+			menu.style.display = "none";
+		}
+
+		function toggleMenu() {
+			menu.style.display = menu.style.display === "none" ? "block" : "none";
+		}
 	}
 
 	async function downloadSlideshow(nav, dlbt) {
@@ -931,6 +1006,7 @@ window.addEventListener("load", function () {
 });
 
 /* Changelog:
+ ** 5.9: added support for audio/video at Newgrounds
  ** 5.8: added support for Bluesky, dropped support for SubscribeStar
  ** 5.7: added support for SubscribeStar, dropped support for DeviantArt
  ** 5.6: fixed action bar detection for X/Twitter

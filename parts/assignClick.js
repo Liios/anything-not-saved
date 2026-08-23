@@ -1,6 +1,6 @@
-async function assignClick(btn, urlList, artName, errorCallback) {
+async function assignClick(btn, urlList, artName, onErrorCallback, onCompletionCallback) {
 	if (forceFailure) {
-		admitFailure(btn, errorCallback);
+		admitFailure(btn, onErrorCallback);
 		return;
 	}
 	if (typeof urlList === "string") {
@@ -19,7 +19,7 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 		// The extensions must be derived from the URL
 		for (let i = 0; i < urlList.length; ++i) {
 			const url = urlList[i];
-			const ext = await detectExtension(btn, url, errorCallback);
+			const ext = await detectExtension(btn, url, onErrorCallback);
 			extList[i] = ext;
 		}
 	}
@@ -31,5 +31,5 @@ async function assignClick(btn, urlList, artName, errorCallback) {
 	for (let i = 0; i < urlList.length; ++i) {
 		pairList.push({url: urlList[i], ext: extList[i]});
 	}
-	btn.addEventListener("click", event => saveAs(event, btn, pairList, artName));
+	btn.addEventListener("click", event => saveAs(event, btn, pairList, artName, onCompletionCallback));
 }

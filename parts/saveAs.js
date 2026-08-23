@@ -1,4 +1,4 @@
-function saveAs(event, btn, pairList, artName) {
+function saveAs(event, btn, pairList, artName, onCompletionCallback) {
 	event.preventDefault();
 	let completed = 0;
 	const total = pairList.length;
@@ -15,7 +15,7 @@ function saveAs(event, btn, pairList, artName) {
 			saveAs: true,
 			onerror: error => handleError(error, url, name, ext),
 			ontimeout: () => handleTimeout(),
-		}).then(unsetBusy);
+		}).then(completeAll);
 	} else {
 		// Batch downloading of multiple pictures
 		const requestList = [];
@@ -34,12 +34,19 @@ function saveAs(event, btn, pairList, artName) {
 			});
 			requestList.push(request);
 		}
-		Promise.all(requestList).then(unsetBusy);
+		Promise.all(requestList).then(completeAll);
 	}
 
 	function completeOne() {
 		completed++;
 		btn.innerText = "Download (" + completed + "/" + total + ")";
+	}
+
+	function completeAll() {
+		if (onCompletionCallback) {
+			onCompletionCallback();
+		}
+		unsetBusy();
 	}
 
 	function setBusy() {

@@ -1,5 +1,13 @@
 function processNewgrounds() {
-	const name = parseName(document.title.substr(0, document.title.length - 14));
+	let name;
+	if (/(^.*) by (.*?$)/.test(document.title)) {
+		// "Picture name by artist on Newgrounds"
+		name = parseName(document.title.substr(0, document.title.length - 14));
+	} else {
+		// Video or audio
+		const artists = [...document.querySelectorAll(".authorlinks h4 :first-child")].map(e => e.innerText).join(", ");
+		name = `${artists} - ${document.title}`;
+	}
 	const nav = document.querySelector("#gallery-nav");
 	let urlList = [];
 	if (nav) {
@@ -7,6 +15,8 @@ function processNewgrounds() {
 		const dlbt = createButton("button", "Download all");
 		dlbt.onclick = () => downloadSlideshow(nav, dlbt);
 		addButton(dlbt);
+	} else if (document.querySelector("video")) {
+		downloadMedia(name);
 	} else {
 		urlList = [...document.querySelectorAll(".pod-body a")].map(a => a.href);
 		urlList = urlList.filter(url => url.startsWith("https://art.ngfiles.com/images/"));
@@ -14,6 +24,63 @@ function processNewgrounds() {
 			console.warn("Unable to create Save As button.");
 		});
 		addButton(sabt);
+	}
+
+	async function downloadMedia(name) {
+		const id = location.href.split('/').pop();
+		const infoRequest = await GM.xmlHttpRequest({
+			method: "get",
+			url: `/portal/video/${id}`,
+			accept: "application/json",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Requested-With": "XMLHttpRequest"
+			},
+		});
+		const sources = JSON.parse(infoRequest.response).sources;
+		const menu = document.createElement("div");
+		Object.assign(menu.style, {
+			display: "none",
+			position: "absolute",
+			background: "white",
+			border: "1px solid #ccc",
+			borderRadius: "6px",
+			padding: "4px",
+			marginLeft: "34px",
+			zIndex: "1000"
+		});
+		for (let key of Object.keys(sources)) {
+			const option = document.createElement("button");
+			option.textContent = key;
+			Object.assign(option.style, {
+				display: "block",
+				width: "100%",
+				border: "none",
+				background: "none",
+				cursor: "pointer"
+			});
+			const src = sources[key][0].src;
+			assignClick(option, src, name, () => console.warn(`Saving of ${src} has failed.`), hideMenu);
+			menu.appendChild(option);
+		}
+		const sabt = createButton("button");
+		sabt.addEventListener("click", toggleMenu);
+		addButton(sabt);
+		sabt.parentElement.appendChild(menu);
+		// Hide the menu when you click outside
+		document.addEventListener("click", (event) => {
+			if (![menu, sabt].some(el => el.contains(event.target))) {
+				hideMenu();
+			}
+		});
+
+		function hideMenu() {
+			menu.style.display = "none";
+		}
+
+		function toggleMenu() {
+			menu.style.display = menu.style.display === "none" ? "block" : "none";
+		}
 	}
 
 	async function downloadSlideshow(nav, dlbt) {
