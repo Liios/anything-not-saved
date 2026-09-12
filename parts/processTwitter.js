@@ -17,7 +17,8 @@ function processTwitter() {
 			case "IMG":
 				if (node.src) {
 					const isMedia = node.src.startsWith("https://pbs.twimg.com/media/");
-					const isQuote = node.src.endsWith("name=240x240") || node.src.endsWith("name=120x120");
+					// Quote tweets must be dismissed, otherwise they overshadow the actual tweet
+					const isQuote = node.closest("[data-testid=testCondensedMedia]");
 					if (isMedia && !isQuote) {
 						const parentAnchor = node.closest("a");
 						if (parentAnchor) {
@@ -60,6 +61,10 @@ function processTwitter() {
 			const urlArray = nameUrlRelation.get(name);
 			if (urlArray === undefined) {
 				// miniature of a quote tweet, skip
+				return;
+			}
+			if (urlArray.includes(url)) {
+				// duplicate, skip
 				return;
 			}
 			urlArray.push(url);
